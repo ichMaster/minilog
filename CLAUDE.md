@@ -58,6 +58,21 @@ The pipeline is: `.ml` file → Lexer → Parser → KnowledgeBase + Queries →
 - Error messages, docstrings, CLI output, and Python code are in **English**. The `.ml` syntax and `docs/language-reference.md` are in **Ukrainian**.
 - Ukrainian keywords: `факт`, `правило`, `якщо`, `і`, `не`, `слід`. Variables use `?` prefix (`?х`, `?хто`, `?_`).
 
+## Allowed Tools & Commands
+
+Claude Code has pre-approved permissions for this project. No confirmation needed for:
+
+- **Python:** `python3`, `python3.13`, `pip install`, `pip install -e .`
+- **Testing:** `pytest` (all forms: single test, single file, coverage, unit/integration)
+- **minilog CLI:** `minilog run`, `minilog repl`, `minilog check`, `minilog version`
+- **Git:** `status`, `log`, `diff`, `add`, `commit`, `push`, `pull`, `fetch`, `branch`, `checkout`, `switch`, `merge`, `stash`, `remote`, `rm`, `mv`, `tag`, `rebase`
+- **GitHub CLI:** `gh issue`, `gh pr`, `gh repo`, `gh auth`, `gh api`
+- **GitHub MCP:** all issue, PR, branch, file, commit, and search operations
+- **Filesystem:** `mkdir`, `ls`, `touch`, `wc`, `tree`
+- **Read:** all files under this project
+
 ## Task Reference
 
 Implementation is organized as MINILOG-001 through MINILOG-017 in the spec. Each task lists files, dependencies, and acceptance criteria. Follow the suggested execution order in section 11 of the spec.
+
+GitHub issues are created at `ichMaster/minilog` (#1–#17), organized into 8 phases with cross-referenced dependencies.
