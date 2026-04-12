@@ -1,5 +1,6 @@
 """Backward-chaining engine (SLD resolution) for minilog."""
 
+import itertools
 from typing import Iterator
 
 from minilog.errors import SolveError
@@ -8,6 +9,8 @@ from minilog.kb import KnowledgeBase
 from minilog.parser import Comparison, Fact, Goal, Negation, Rule
 from minilog.terms import Compound, Term, Var
 from minilog.unify import Substitution, unify
+
+_rename_counter = itertools.count()
 
 
 def solve(
@@ -48,7 +51,7 @@ def solve(
 
     # Then try rules
     for rule in rules:
-        fresh_rule = rename_variables(rule, suffix=f"_{depth}_{id(rule)}")
+        fresh_rule = rename_variables(rule, suffix=f"_{next(_rename_counter)}")
         new_subst = unify(goal, fresh_rule.head, subst)
         if new_subst is None:
             continue
