@@ -1,0 +1,8 @@
+true.
+(1 solution)
+?x = житомир.
+?x = чернігів.
+(2 solutions)
+?x = черкаси.
+?x = кропивницький.
+(2 solutions)

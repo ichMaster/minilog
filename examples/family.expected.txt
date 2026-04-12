@@ -1,0 +1,9 @@
+?x = авраам.
+(1 solution)
+true.
+(1 solution)
+?x = ісак.
+?x = яків.
+?x = йосип.
+?x = веніамін.
+(4 solutions)

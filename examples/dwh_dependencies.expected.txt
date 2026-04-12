@@ -1,0 +1,32 @@
+?x = dim_customer.
+?x = dim_customer.
+(2 solutions)
+?x = sp_build_dim_customer.
+?x = sp_refresh_dim_customer.
+?x = sp_load_customers.
+(3 solutions)
+?t = dim_customer.
+?p1 = sp_load_customers.
+?p2 = sp_build_dim_customer.
+?t = dim_customer.
+?p1 = sp_load_customers.
+?p2 = sp_refresh_dim_customer.
+?t = dim_customer.
+?p1 = sp_build_dim_customer.
+?p2 = sp_load_customers.
+?t = dim_customer.
+?p1 = sp_build_dim_customer.
+?p2 = sp_refresh_dim_customer.
+?t = fact_sales.
+?p1 = sp_load_orders.
+?p2 = sp_build_fact_sales.
+?t = fact_sales.
+?p1 = sp_build_fact_sales.
+?p2 = sp_load_orders.
+?t = dim_customer.
+?p1 = sp_refresh_dim_customer.
+?p2 = sp_load_customers.
+?t = dim_customer.
+?p1 = sp_refresh_dim_customer.
+?p2 = sp_build_dim_customer.
+(8 solutions)
