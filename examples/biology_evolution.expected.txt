@@ -1,0 +1,5 @@
+?x = горобець.
+?x = орел.
+(2 solutions)
+true.
+(1 solution)
