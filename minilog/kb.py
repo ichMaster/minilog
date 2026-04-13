@@ -12,6 +12,7 @@ class KnowledgeBase:
     def __init__(self) -> None:
         self._facts: dict[tuple[str, int], list[Fact]] = defaultdict(list)
         self._rules: dict[tuple[str, int], list[Rule]] = defaultdict(list)
+        self._production_rules: list = []
 
     def add_fact(self, fact: Fact) -> None:
         key = (fact.head.functor, fact.head.arity)
@@ -34,6 +35,23 @@ class KnowledgeBase:
             return True
         return False
 
+    def add_fact_if_new(self, fact: Fact) -> bool:
+        """Add a fact only if not already present. Returns True on insertion."""
+        key = (fact.head.functor, fact.head.arity)
+        if fact in self._facts[key]:
+            return False
+        self._facts[key].append(fact)
+        return True
+
+    def add_production_rule(self, rule) -> None:
+        self._production_rules.append(rule)
+
+    def production_rules(self) -> list:
+        return list(self._production_rules)
+
+    def clear_production_rules(self) -> None:
+        self._production_rules.clear()
+
     def all_facts(self) -> Iterator[Fact]:
         for facts in self._facts.values():
             yield from facts
@@ -54,5 +72,6 @@ class KnowledgeBase:
         return {
             "facts": sum(len(fs) for fs in self._facts.values()),
             "rules": sum(len(rs) for rs in self._rules.values()),
+            "production_rules": len(self._production_rules),
             "predicates": len(set(self._facts.keys()) | set(self._rules.keys())),
         }

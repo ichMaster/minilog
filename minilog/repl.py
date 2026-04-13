@@ -84,9 +84,15 @@ class Repl:
             self.kb.add_fact(fact)
         for rule in program.rules:
             self.kb.add_rule(rule)
+        if program.production_rules:
+            for pr_def in program.production_rules:
+                self.kb.add_production_rule(self._build_production_rule(pr_def))
 
         stats = self.kb.stats()
-        print(f"Loaded {path}: {stats['facts']} facts, {stats['rules']} rules")
+        parts = [f"{stats['facts']} facts", f"{stats['rules']} rules"]
+        if stats['production_rules'] > 0:
+            parts.append(f"{stats['production_rules']} production rules")
+        print(f"Loaded {path}: {', '.join(parts)}")
 
     def _handle_command(self, line: str) -> bool:
         """Handle a colon-prefixed command. Returns True to quit."""
@@ -128,7 +134,11 @@ class Repl:
     def _cmd_stats(self) -> None:
         """Show KB statistics with per-predicate breakdown."""
         stats = self.kb.stats()
-        print(f"Facts: {stats['facts']}, Rules: {stats['rules']}, Predicates: {stats['predicates']}")
+        parts = [f"Facts: {stats['facts']}", f"Rules: {stats['rules']}"]
+        if stats['production_rules'] > 0:
+            parts.append(f"Production rules: {stats['production_rules']}")
+        parts.append(f"Predicates: {stats['predicates']}")
+        print(", ".join(parts))
         for functor, arity, fact_count, rule_count in self.kb.predicates():
             parts = []
             if fact_count > 0:
@@ -155,6 +165,35 @@ class Repl:
             for rule in rules:
                 body_str = ", ".join(repr(g) for g in rule.body)
                 print(f"  {rule.head} :- {body_str}.")
+        # Production rules
+        pr_rules = self.kb.production_rules()
+        if pr_rules:
+            if preds:
+                print()
+            print("% Production rules")
+            for pr in pr_rules:
+                parts = [f"продукція {pr.name}"]
+                if pr.add:
+                    parts.append(f"додати {', '.join(repr(t) for t in pr.add)}")
+                if pr.remove:
+                    parts.append(f"видалити {', '.join(repr(t) for t in pr.remove)}")
+                print(f"  {' '.join(parts)}")
+
+    @staticmethod
+    def _build_production_rule(pr_def):
+        """Convert ProductionRuleDef (parser) to ProductionRule (evolution)."""
+        from minilog.evolution import ProductionRule
+        # For conjunctive conditions, use the first goal as the main condition
+        # The engine will solve the full body via solve_body
+        condition = pr_def.condition[0] if len(pr_def.condition) == 1 else pr_def.condition[0]
+        return ProductionRule(
+            name=pr_def.name,
+            condition=condition,
+            add=pr_def.add,
+            remove=pr_def.remove,
+            guard=pr_def.guard,
+            body=pr_def.condition,
+        )
 
     def _cmd_list(self, arg: str) -> None:
         """List facts and rules for a predicate."""
@@ -180,14 +219,51 @@ class Repl:
 
     def _cmd_evolve(self, arg: str) -> None:
         """Run N generations of production rules."""
+        from minilog.evolution import run_generations as evolve_run
         try:
             n = int(arg) if arg else 1
         except ValueError:
-            print("Usage: :evolve <N> (N must be an integer)")
+            print("Usage: :evolve <N> (N must be a positive integer)")
             return
-        # Evolution requires production rules which are created programmatically;
-        # for now just report that no production rules are loaded
-        print(f"Evolution: no production rules loaded (use programmatic API)")
+        if n <= 0:
+            print("Usage: :evolve <N> (N must be positive)")
+            return
+        if n > 10000:
+            print(f"Warning: capping at 10000 generations (requested {n})")
+            n = 10000
+
+        rules = self.kb.production_rules()
+        if not rules:
+            print("No production rules in the knowledge base. Load a file with 'продукція' declarations.")
+            return
+
+        try:
+            history = evolve_run(self.kb, rules, n)
+        except MinilogError as e:
+            print(f"Error during evolution: {e}")
+            return
+
+        total_added = 0
+        total_removed = 0
+        for entry in history:
+            gen = entry["generation"]
+            a = entry["added"]
+            r = entry["removed"]
+            total_added += len(a)
+            total_removed += len(r)
+            if not a and not r:
+                print(f"  Generation {gen + 1}: no changes (fixpoint reached)")
+                break
+            parts = []
+            if a:
+                parts.append(f"+{len(a)} fact{'s' if len(a) != 1 else ''}")
+            if r:
+                parts.append(f"-{len(r)} fact{'s' if len(r) != 1 else ''}")
+            print(f"  Generation {gen + 1}: {', '.join(parts)}")
+
+        executed = len(history)
+        print(f"Done. {executed} generation{'s' if executed != 1 else ''} executed, "
+              f"{total_added} added, {total_removed} removed.")
 
     def _cmd_trace(self, arg: str) -> None:
         """Toggle trace mode."""

@@ -87,13 +87,11 @@ class TestEvolution:
             add=[Compound("предок", (Var("x"), Var("y")))],
             remove=[],
         )
-        history = run_generations(kb, [rule], 3)
+        history = run_generations(kb, [rule], 3, detect_fixpoint=False)
         assert len(history) == 3
 
     def test_cumulative_state_over_3_generations(self) -> None:
-        """Running a mutation rule 3 times produces the expected cumulative state."""
-        # стан(а, 1) → стан(а, 2) → стан(а, 3)
-        # Each gen: if стан(?x, ?n) then add пройшов(?x, ?n) (log that we passed through)
+        """Running a mutation rule 3 times — fixpoint stops early."""
         kb = _kb_with_facts([
             Fact(head=Compound("існує", (Atom("а"),))),
             Fact(head=Compound("існує", (Atom("б"),))),
@@ -107,9 +105,9 @@ class TestEvolution:
         history = run_generations(kb, [rule], 3)
         # First generation adds позначено(а) and позначено(б)
         assert len(history[0]["added"]) == 2
-        # Second and third: no new facts (already exist), so nothing added
+        # Second: no new facts → fixpoint, stops early
+        assert len(history) == 2
         assert len(history[1]["added"]) == 0
-        assert len(history[2]["added"]) == 0
         # KB should have 4 facts total
         all_facts = list(kb.all_facts())
         assert len(all_facts) == 4
