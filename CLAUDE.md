@@ -11,22 +11,25 @@ The full technical specification lives in `specification/minilog-phase1-spec.md`
 ## Build & Run
 
 ```bash
-pip install -e .                    # install in dev mode
-minilog version                     # verify installation
-minilog run examples/family.ml      # execute a .ml file
-minilog repl                        # interactive shell
-minilog check examples/family.ml    # parse-only syntax check
+python3.13 -m venv .venv                                    # create virtual environment (Python 3.13)
+.venv/bin/pip install -e ".[dev]"                            # install in dev mode with test deps
+.venv/bin/minilog version                                    # verify installation
+.venv/bin/minilog run examples/family.ml                     # execute a .ml file
+.venv/bin/minilog repl                                       # interactive shell
+.venv/bin/minilog check examples/family.ml                   # parse-only syntax check
 ```
+
+**Note for Claude Code:** Use `.venv/bin/python`, `.venv/bin/pytest`, `.venv/bin/pip`, `.venv/bin/minilog` directly instead of `source .venv/bin/activate` — the direct paths have pre-approved permissions.
 
 ## Testing
 
 ```bash
-pytest                                            # all tests
-pytest tests/unit/                                # unit only
-pytest tests/integration/                         # integration only
-pytest tests/unit/test_engine.py                  # single file
-pytest tests/unit/test_engine.py::test_recursion  # single test
-pytest --cov=minilog --cov-report=term-missing    # with coverage
+.venv/bin/pytest                                             # all tests
+.venv/bin/pytest tests/unit/                                 # unit only
+.venv/bin/pytest tests/integration/                          # integration only
+.venv/bin/pytest tests/unit/test_engine.py                   # single file
+.venv/bin/pytest tests/unit/test_engine.py::test_recursion   # single test
+.venv/bin/pytest --cov=minilog --cov-report=term-missing     # with coverage
 ```
 
 Coverage targets: 100% on `terms`, `unify`, `kb`, `engine`; 80%+ on `tracer`, `evolution`, `repl`, `cli`.
@@ -62,14 +65,18 @@ The pipeline is: `.ml` file → Lexer → Parser → KnowledgeBase + Queries →
 
 Claude Code has pre-approved permissions for this project. No confirmation needed for:
 
-- **Python:** `python3`, `python3.13`, `pip install`, `pip install -e .`
+- **Python:** `python3`, `python3.13`, `python`, `pip`, `pip3` (all subcommands)
+- **Virtual env (direct paths):** `.venv/bin/python`, `.venv/bin/pytest`, `.venv/bin/pip`, `.venv/bin/minilog`
 - **Testing:** `pytest` (all forms: single test, single file, coverage, unit/integration)
 - **minilog CLI:** `minilog run`, `minilog repl`, `minilog check`, `minilog version`
-- **Git:** `status`, `log`, `diff`, `add`, `commit`, `push`, `pull`, `fetch`, `branch`, `checkout`, `switch`, `merge`, `stash`, `remote`, `rm`, `mv`, `tag`, `rebase`
-- **GitHub CLI:** `gh issue`, `gh pr`, `gh repo`, `gh auth`, `gh api`
+- **Git:** all `git` subcommands (`status`, `log`, `diff`, `add`, `commit`, `push`, etc.)
+- **GitHub CLI:** all `gh` subcommands (`issue`, `pr`, `repo`, `auth`, `api`)
 - **GitHub MCP:** all issue, PR, branch, file, commit, and search operations
-- **Filesystem:** `mkdir`, `ls`, `touch`, `wc`, `tree`
-- **Read:** all files under this project
+- **Filesystem:** `mkdir`, `ls`, `touch`, `wc`, `tree`, `cat`
+- **Read/Write/Edit:** all files under this project
+- **Glob/Grep:** all file search and content search under this project
+- **TodoWrite:** task tracking for multi-step work
+- **Skills:** `/execute-phase` (phase execution skill)
 
 ## Task Reference
 

@@ -1,0 +1,1 @@
+Execute phase $ARGUMENTS of the minilog project using the skill defined in .claude/skills/execute-phase.md. Follow every step in that skill exactly.

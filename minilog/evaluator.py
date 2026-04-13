@@ -25,7 +25,15 @@ def check_comparison(left: Term, op: str, right: Term,
     """Evaluate a comparison: left op right under the given substitution.
 
     Supported operators: ≥, ≤, >, <, =, ≠
+    Equality (=, ≠) works on any terms. Ordering (≥, ≤, >, <) requires numbers.
     """
+    if op in ("=", "≠"):
+        lval = subst.apply(left)
+        rval = subst.apply(right)
+        if op == "=":
+            return lval == rval
+        return lval != rval
+
     lval = evaluate(left, subst).value
     rval = evaluate(right, subst).value
 
@@ -37,9 +45,5 @@ def check_comparison(left: Term, op: str, right: Term,
         return lval > rval
     if op == "<":
         return lval < rval
-    if op == "=":
-        return lval == rval
-    if op == "≠":
-        return lval != rval
 
     raise EvaluatorError(f"unknown comparison operator: {op!r}")
