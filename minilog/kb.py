@@ -38,6 +38,18 @@ class KnowledgeBase:
         for facts in self._facts.values():
             yield from facts
 
+    def predicates(self) -> list[tuple[str, int, int, int]]:
+        """Return all predicates as (functor, arity, fact_count, rule_count), sorted."""
+        keys = set(self._facts.keys()) | set(self._rules.keys())
+        result = []
+        for functor, arity in keys:
+            fact_count = len(self._facts[(functor, arity)])
+            rule_count = len(self._rules[(functor, arity)])
+            if fact_count > 0 or rule_count > 0:
+                result.append((functor, arity, fact_count, rule_count))
+        result.sort(key=lambda x: (x[0], x[1]))
+        return result
+
     def stats(self) -> dict[str, int]:
         return {
             "facts": sum(len(fs) for fs in self._facts.values()),

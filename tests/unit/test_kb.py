@@ -81,6 +81,37 @@ def test_all_facts():
     assert f2 in all_f
 
 
+def test_predicates_empty():
+    """Empty KB returns empty list."""
+    kb = KnowledgeBase()
+    assert kb.predicates() == []
+
+
+def test_predicates_mixed():
+    """Mixed facts and rules return correct counts in alphabetical order."""
+    kb = KnowledgeBase()
+    kb.add_fact(_fact("батько", "авраам", "ісак"))
+    kb.add_fact(_fact("батько", "ісак", "яків"))
+    kb.add_rule(_rule("предок", "батько"))
+
+    preds = kb.predicates()
+    assert len(preds) == 2
+    assert preds[0] == ("батько", 2, 2, 0)
+    assert preds[1] == ("предок", 2, 0, 1)
+
+
+def test_predicates_same_functor_different_arity():
+    """Same functor with different arities appear as separate entries."""
+    kb = KnowledgeBase()
+    kb.add_fact(Fact(head=Compound("батько", (Atom("авраам"),))))
+    kb.add_fact(_fact("батько", "авраам", "ісак"))
+
+    preds = kb.predicates()
+    assert len(preds) == 2
+    assert preds[0] == ("батько", 1, 1, 0)
+    assert preds[1] == ("батько", 2, 1, 0)
+
+
 def test_stats():
     """stats reports correct counts."""
     kb = KnowledgeBase()
