@@ -89,6 +89,7 @@ Nine example files are included in `examples/`:
 | `causality.ml` | Weather/transport — transitive causation, common cause |
 | `terra_tacita.ml` | Inter-species communication via artifacts |
 | `biology_evolution.ml` | Production rules preserving formal rules |
+| `arithmetic_demo.ml` | Arithmetic expressions: Pythagorean theorem, distance, sqrt/pow/abs |
 
 Run any example:
 

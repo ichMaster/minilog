@@ -1,0 +1,45 @@
+true.
+(1 solution)
+true.
+(1 solution)
+false.
+?p1 = a.
+?p2 = b.
+?p1 = a.
+?p2 = c.
+?p1 = a.
+?p2 = e.
+?p1 = b.
+?p2 = a.
+?p1 = b.
+?p2 = e.
+?p1 = c.
+?p2 = a.
+?p1 = c.
+?p2 = e.
+?p1 = c.
+?p2 = f.
+?p1 = d.
+?p2 = f.
+?p1 = e.
+?p2 = a.
+?p1 = e.
+?p2 = b.
+?p1 = e.
+?p2 = c.
+?p1 = f.
+?p2 = c.
+?p1 = f.
+?p2 = d.
+(14 solutions)
+?p = d.
+?p = e.
+?p = f.
+(3 solutions)
+true.
+(1 solution)
+false.
+rule: піфагорова_трійка(3, 4, 5)
+└─ builtin: Comparison(left=+(*(?a_0_4455171136, ?a_0_4455171136), *(?b_0_4455171136, ?b_0_4455171136)), op='=', right=*(?c_0_4455171136, ?c_0_4455171136))
+true.
+(1 solution)
