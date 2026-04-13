@@ -200,7 +200,7 @@ class Parser:
         return goals
 
     def _parse_goal(self) -> Goal:
-        """Parse: compound | negation | comparison."""
+        """Parse: compound | negation | comparison (with arithmetic expressions)."""
         self._skip_newlines()
 
         # Negation: не compound
@@ -211,20 +211,74 @@ class Parser:
                 raise self._error("negation requires a compound term")
             return Negation(inner=inner)
 
-        # Could be comparison or compound — parse the first term
-        left = self._parse_term()
+        # Try to parse an expression (which may be a simple term or arithmetic)
+        left = self._parse_expression()
 
         # Check for comparison operator
         if self._at(*COMPARISON_OPS.keys()):
             op_tok = self._advance()
             op = COMPARISON_OPS[op_tok.type]
-            right = self._parse_term()
+            right = self._parse_expression()
             return Comparison(left=left, op=op, right=right)
 
-        # Must be a compound goal
+        # Must be a compound goal (no arithmetic in non-comparison context)
         if not isinstance(left, Compound):
             raise self._error("goal must be a compound term, comparison, or negation")
         return left
+
+    # -- arithmetic expression parsing (for comparison goals) --
+
+    def _parse_expression(self) -> Term:
+        """Parse: term_add { ('+' | '-') term_add }. Left-associative."""
+        left = self._parse_term_mul()
+        while self._at(TokenType.OP_PLUS, TokenType.OP_MINUS):
+            op_tok = self._advance()
+            right = self._parse_term_mul()
+            left = Compound(functor=op_tok.value, args=(left, right))
+        return left
+
+    def _parse_term_mul(self) -> Term:
+        """Parse: factor { ('*' | '/') factor }. Left-associative."""
+        left = self._parse_factor()
+        while self._at(TokenType.OP_STAR, TokenType.OP_SLASH):
+            op_tok = self._advance()
+            right = self._parse_factor()
+            left = Compound(functor=op_tok.value, args=(left, right))
+        return left
+
+    def _parse_factor(self) -> Term:
+        """Parse: '-' factor | primary."""
+        if self._at(TokenType.OP_MINUS):
+            self._advance()
+            inner = self._parse_factor()
+            return Compound(functor="-", args=(inner,))
+        return self._parse_primary()
+
+    def _parse_primary(self) -> Term:
+        """Parse: number | var | compound_call | '(' expression ')' | atom."""
+        if self._at(TokenType.LPAREN):
+            self._advance()
+            expr = self._parse_expression()
+            self._expect(TokenType.RPAREN)
+            return expr
+
+        # Function call in expression: IDENT '(' expression {',' expression} ')'
+        if self._at(TokenType.IDENT):
+            tok = self._current()
+            if (self.pos + 1 < len(self.tokens)
+                    and self.tokens[self.pos + 1].type == TokenType.LPAREN):
+                self._advance()  # consume IDENT
+                self._advance()  # consume (
+                args: list[Term] = []
+                if not self._at(TokenType.RPAREN):
+                    args.append(self._parse_expression())
+                    while self._at(TokenType.COMMA):
+                        self._advance()
+                        args.append(self._parse_expression())
+                self._expect(TokenType.RPAREN)
+                return Compound(functor=tok.value, args=tuple(args))
+
+        return self._parse_term()
 
     def _parse_compound(self) -> Compound:
         """Parse: IDENT '(' [term {',' term}] ')' | IDENT (nullary atom)."""

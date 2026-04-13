@@ -150,3 +150,83 @@ def test_string_and_number_terms():
     head = prog.facts[0].head
     assert head.args[0] == Str("привіт")
     assert head.args[1] == Num(42)
+
+
+# -- Arithmetic expression tests --
+
+def test_simple_addition():
+    """?a + ?b = 10 parses as comparison with + compound on left."""
+    prog = parse("правило x() якщо ?a + ?b = 10.")
+    body = prog.rules[0].body
+    assert len(body) == 1
+    comp = body[0]
+    assert isinstance(comp, Comparison)
+    assert comp.op == "="
+    assert isinstance(comp.left, Compound)
+    assert comp.left.functor == "+"
+    assert comp.right == Num(10)
+
+
+def test_precedence_mul_over_add():
+    """?a + ?b * ?c = ?d parses as ?a + (?b * ?c)."""
+    prog = parse("правило x() якщо ?a + ?b * ?c = ?d.")
+    comp = prog.rules[0].body[0]
+    # left = +(a, *(b, c))
+    assert comp.left.functor == "+"
+    assert comp.left.args[0] == Var("a")
+    assert comp.left.args[1].functor == "*"
+
+
+def test_left_associativity():
+    """?a - ?b - ?c parses as (?a - ?b) - ?c."""
+    prog = parse("правило x() якщо ?a - ?b - ?c = 0.")
+    comp = prog.rules[0].body[0]
+    # left = -(-(a, b), c)
+    assert comp.left.functor == "-"
+    assert comp.left.args[0].functor == "-"
+    assert comp.left.args[0].args[0] == Var("a")
+    assert comp.left.args[0].args[1] == Var("b")
+    assert comp.left.args[1] == Var("c")
+
+
+def test_parentheses_override():
+    """(?a + ?b) * ?c = ?d parses with parentheses overriding precedence."""
+    prog = parse("правило x() якщо (?a + ?b) * ?c = ?d.")
+    comp = prog.rules[0].body[0]
+    # left = *(+(a, b), c)
+    assert comp.left.functor == "*"
+    assert comp.left.args[0].functor == "+"
+
+
+def test_pythagorean():
+    """?a * ?a + ?b * ?b = ?c * ?c parses correctly."""
+    prog = parse("правило x() якщо ?a * ?a + ?b * ?b = ?c * ?c.")
+    comp = prog.rules[0].body[0]
+    # left = +(*(a,a), *(b,b)), right = *(c,c)
+    assert comp.left.functor == "+"
+    assert comp.right.functor == "*"
+
+
+def test_unary_minus_on_var():
+    """-?a < 0 parses unary minus."""
+    prog = parse("правило x() якщо -?a < 0.")
+    comp = prog.rules[0].body[0]
+    assert comp.left.functor == "-"
+    assert comp.left.arity == 1
+    assert comp.left.args[0] == Var("a")
+
+
+def test_builtin_function_call():
+    """sqrt(?x * ?x + ?y * ?y) = ?d parses function call."""
+    prog = parse("правило x() якщо sqrt(?x * ?x + ?y * ?y) = ?d.")
+    comp = prog.rules[0].body[0]
+    # left is Compound("sqrt", (+(*(x,x), *(y,y)),))
+    assert isinstance(comp.left, Compound)
+    assert comp.left.functor == "sqrt"
+    assert comp.left.arity == 1
+
+
+def test_arithmetic_in_rule_head_rejected():
+    """Arithmetic in rule head raises ParseError."""
+    with pytest.raises(ParseError):
+        parse("правило подвійний(?x, ?x + ?x).")
