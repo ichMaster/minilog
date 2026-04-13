@@ -28,6 +28,7 @@ Commands:
   :evolve <N>          — run N generations of production rules
   :saturate            — run forward chaining to fixpoint
   :trace on|off        — toggle automatic tracing
+  :kb                  — dump the entire knowledge base (facts and rules)
   :clear               — wipe the KB
 
 Any other line is interpreted as a fact, rule, or query."""
@@ -114,6 +115,8 @@ class Repl:
             print(f"Saturated: {added} new facts derived")
         elif cmd == ":trace":
             self._cmd_trace(arg)
+        elif cmd == ":kb":
+            self._cmd_kb()
         elif cmd == ":clear":
             self.kb = KnowledgeBase()
             print("Knowledge base cleared.")
@@ -133,6 +136,25 @@ class Repl:
             if rule_count > 0:
                 parts.append(f"{rule_count} rule{'s' if rule_count != 1 else ''}")
             print(f"  {functor}/{arity} ({', '.join(parts)})")
+
+    def _cmd_kb(self) -> None:
+        """Dump the entire knowledge base grouped by predicate."""
+        preds = self.kb.predicates()
+        if not preds:
+            print("Knowledge base is empty.")
+            return
+        first = True
+        for functor, arity, _, _ in preds:
+            if not first:
+                print()
+            first = False
+            print(f"% {functor}/{arity}")
+            facts, rules = self.kb.lookup(functor, arity)
+            for fact in facts:
+                print(f"  {fact.head}.")
+            for rule in rules:
+                body_str = ", ".join(repr(g) for g in rule.body)
+                print(f"  {rule.head} :- {body_str}.")
 
     def _cmd_list(self, arg: str) -> None:
         """List facts and rules for a predicate."""
