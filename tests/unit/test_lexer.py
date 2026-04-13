@@ -154,3 +154,11 @@ def test_keyword_and():
     and_tokens = [t for t in tokens if t.type == TokenType.KW_AND]
     assert len(and_tokens) == 1
     assert and_tokens[0].value == "і"
+
+
+def test_bang_equals_as_ne():
+    """!= is tokenized as OP_NE, same as ≠."""
+    tokens = tokenize("правило різні(?x, ?y) якщо ?x != ?y.")
+    ne_tokens = [t for t in tokens if t.type == TokenType.OP_NE]
+    assert len(ne_tokens) == 1
+    assert ne_tokens[0].value == "!="

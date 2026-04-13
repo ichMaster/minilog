@@ -297,6 +297,11 @@ def tokenize(source: str) -> list[Token]:
             advance()
             tokens.append(Token(TokenType.OP_NE, "≠", line, start_col))
             continue
+        if ch == "!" and pos + 1 < len(source) and source[pos + 1] == "=":
+            advance()  # consume !
+            advance()  # consume =
+            tokens.append(Token(TokenType.OP_NE, "!=", line, start_col))
+            continue
 
         raise LexError(line, start_col, f"unexpected character {ch!r}")
 
