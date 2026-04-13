@@ -40,6 +40,6 @@ true.
 (1 solution)
 false.
 rule: піфагорова_трійка(3, 4, 5)
-└─ builtin: Comparison(left=+(*(?a_0_4455171136, ?a_0_4455171136), *(?b_0_4455171136, ?b_0_4455171136)), op='=', right=*(?c_0_4455171136, ?c_0_4455171136))
+└─ builtin: Comparison(left=+(*(?a_7, ?a_7), *(?b_7, ?b_7)), op='=', right=*(?c_7, ?c_7))
 true.
 (1 solution)

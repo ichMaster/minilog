@@ -90,6 +90,7 @@ Nine example files are included in `examples/`:
 | `terra_tacita.ml` | Inter-species communication via artifacts |
 | `biology_evolution.ml` | Production rules preserving formal rules |
 | `arithmetic_demo.ml` | Arithmetic expressions: Pythagorean theorem, distance, sqrt/pow/abs |
+| `calculator.ml` | AST walker evaluating arithmetic expression trees via structural recursion |
 
 Run any example:
 

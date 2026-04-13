@@ -104,7 +104,8 @@ class Tracer:
 
         # Try rules
         for rule in rules:
-            fresh_rule = rename_variables(rule, suffix=f"_{depth}_{id(rule)}")
+            from minilog.engine import _rename_counter
+            fresh_rule = rename_variables(rule, suffix=f"_{next(_rename_counter)}")
             new_subst = unify(goal, fresh_rule.head, subst)
             if new_subst is None:
                 continue
