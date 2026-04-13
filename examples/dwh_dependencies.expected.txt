@@ -1,6 +1,5 @@
 ?x = dim_customer.
-?x = dim_customer.
-(2 solutions)
+(1 solution)
 ?x = sp_build_dim_customer.
 ?x = sp_refresh_dim_customer.
 ?x = sp_load_customers.

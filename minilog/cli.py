@@ -83,13 +83,32 @@ def _execute_query(query, kb, solve, tracer, Substitution) -> None:
             print(f"({count} solution{'s' if count != 1 else ''})")
     else:
         count = 0
+        seen_bindings: set[tuple] = set()
         for subst in solve(query.goal, kb):
+            key = _binding_key(query.goal, subst)
+            if key in seen_bindings:
+                continue
+            seen_bindings.add(key)
             _print_bindings(query.goal, subst)
             count += 1
         if count == 0:
             print("false.")
         else:
             print(f"({count} solution{'s' if count != 1 else ''})")
+
+
+def _binding_key(goal, subst) -> tuple:
+    """Compute a hashable key from the visible bindings for deduplication."""
+    query_vars = _collect_vars(goal)
+    parts = []
+    seen = set()
+    for var in query_vars:
+        if var.name == "_" or var.name in seen:
+            continue
+        seen.add(var.name)
+        resolved = subst.apply(var)
+        parts.append((var.name, repr(resolved)))
+    return tuple(parts)
 
 
 def _collect_vars(term) -> list:
