@@ -93,6 +93,7 @@ Nine example files are included in `examples/`:
 | `calculator.ml` | AST walker evaluating arithmetic expression trees via structural recursion |
 | `unit_conversion.ml` | Temperature, distance, BMI, kinetic energy — practical arithmetic formulas |
 | `geometry_triangles.ml` | Triangle classification and theorems (requires Phase 9 arithmetic) |
+| `evolution_aging.ml` | Population dynamics simulation using production rules over generations |
 
 Run any example:
 
