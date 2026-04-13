@@ -22,6 +22,10 @@ class TokenType(Enum):
     KW_AND = auto()       # і
     KW_NOT = auto()       # не
     KW_TRACE = auto()     # слід
+    KW_PRODUCTION = auto() # продукція
+    KW_ADD = auto()        # додати
+    KW_REMOVE = auto()     # видалити
+    KW_WHEN = auto()       # коли
 
     # Punctuation
     LPAREN = auto()
@@ -63,6 +67,10 @@ KEYWORDS: dict[str, TokenType] = {
     "і": TokenType.KW_AND,
     "не": TokenType.KW_NOT,
     "слід": TokenType.KW_TRACE,
+    "продукція": TokenType.KW_PRODUCTION,
+    "додати": TokenType.KW_ADD,
+    "видалити": TokenType.KW_REMOVE,
+    "коли": TokenType.KW_WHEN,
 }
 
 

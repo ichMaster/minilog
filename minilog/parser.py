@@ -47,10 +47,21 @@ Goal = Union[Compound, Comparison, Negation]
 
 
 @dataclass
+class ProductionRuleDef:
+    """A production rule definition from .ml source."""
+    name: str
+    condition: list[Goal]
+    add: list[Compound]
+    remove: list[Compound]
+    guard: Goal | None = None
+
+
+@dataclass
 class Program:
     facts: list[Fact]
     rules: list[Rule]
     queries: list[Query]
+    production_rules: list[ProductionRuleDef] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -119,21 +130,26 @@ class Parser:
         rules: list[Rule] = []
         queries: list[Query] = []
 
+        production_rules: list[ProductionRuleDef] = []
+
         self._skip_newlines()
         while not self._at(TokenType.EOF):
             if self._at(TokenType.KW_RULE):
                 rules.append(self._parse_rule())
+            elif self._at(TokenType.KW_PRODUCTION):
+                production_rules.append(self._parse_production_rule())
             elif self._at(TokenType.QUERY_START):
                 queries.append(self._parse_query())
             elif self._at(TokenType.IDENT):
                 facts.append(self._parse_fact())
             else:
                 raise self._error(
-                    f"expected fact, rule, or query; got {self._peek().name}"
+                    f"expected fact, rule, query, or production rule; got {self._peek().name}"
                 )
             self._skip_newlines()
 
-        return Program(facts=facts, rules=rules, queries=queries)
+        return Program(facts=facts, rules=rules, queries=queries,
+                       production_rules=production_rules or None)
 
     def _parse_fact(self) -> Fact:
         """Parse: compound '.'"""
@@ -185,6 +201,61 @@ class Parser:
             raise self._error("query goal must be a compound term or atom")
         self._expect(TokenType.DOT)
         return Query(goal=goal, trace=trace)
+
+    def _parse_production_rule(self) -> ProductionRuleDef:
+        """Parse: продукція <name> якщо <body> [додати <terms>] [видалити <terms>] [коли <guard>]."""
+        self._advance()  # consume KW_PRODUCTION
+        name_tok = self._expect(TokenType.IDENT)
+        name = name_tok.value
+
+        self._skip_newlines()
+        self._expect(TokenType.KW_IF)
+        condition = self._parse_body()
+
+        add_terms: list[Compound] = []
+        remove_terms: list[Compound] = []
+        guard: Goal | None = None
+
+        self._skip_newlines()
+
+        # Parse optional додати clause
+        if self._at(TokenType.KW_ADD):
+            self._advance()
+            self._skip_newlines()
+            add_terms.append(self._parse_compound())
+            while self._at(TokenType.COMMA):
+                self._advance()
+                self._skip_newlines()
+                add_terms.append(self._parse_compound())
+            self._skip_newlines()
+
+        # Parse optional видалити clause
+        if self._at(TokenType.KW_REMOVE):
+            self._advance()
+            self._skip_newlines()
+            remove_terms.append(self._parse_compound())
+            while self._at(TokenType.COMMA):
+                self._advance()
+                self._skip_newlines()
+                remove_terms.append(self._parse_compound())
+            self._skip_newlines()
+
+        # Validate: at least one of add/remove must be non-empty
+        if not add_terms and not remove_terms:
+            raise self._error("production rule must have at least one 'додати' or 'видалити' clause")
+
+        # Parse optional коли guard
+        if self._at(TokenType.KW_WHEN):
+            self._advance()
+            self._skip_newlines()
+            guard = self._parse_goal()
+            self._skip_newlines()
+
+        self._expect(TokenType.DOT)
+        return ProductionRuleDef(
+            name=name, condition=condition,
+            add=add_terms, remove=remove_terms, guard=guard,
+        )
 
     def _parse_body(self) -> list[Goal]:
         """Parse: goal { 'і' goal }"""
