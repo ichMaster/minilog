@@ -156,6 +156,62 @@ def test_keyword_and():
     assert and_tokens[0].value == "і"
 
 
+def test_arithmetic_plus():
+    """+ tokenizes as OP_PLUS."""
+    tokens = tokenize("?a + ?b = 10.")
+    plus = [t for t in tokens if t.type == TokenType.OP_PLUS]
+    assert len(plus) == 1
+
+
+def test_arithmetic_minus_binary():
+    """?a - 5 tokenizes as VAR, OP_MINUS, INT(5)."""
+    tokens = tokenize("?a - 5 = 0.")
+    types = [t.type for t in tokens]
+    assert TokenType.OP_MINUS in types
+    int_tok = [t for t in tokens if t.type == TokenType.INT and t.value == "5"]
+    assert len(int_tok) == 1
+
+
+def test_arithmetic_star():
+    """* tokenizes as OP_STAR."""
+    tokens = tokenize("?a * ?b = 10.")
+    star = [t for t in tokens if t.type == TokenType.OP_STAR]
+    assert len(star) == 1
+
+
+def test_arithmetic_slash():
+    """/ tokenizes as OP_SLASH."""
+    tokens = tokenize("3.14 / 2 = ?x.")
+    slash = [t for t in tokens if t.type == TokenType.OP_SLASH]
+    assert len(slash) == 1
+
+
+def test_negative_literal_start():
+    """-5 at start of expression tokenizes as INT(-5)."""
+    tokens = tokenize("правило x() якщо -5 < 0.")
+    int_toks = [t for t in tokens if t.type == TokenType.INT and t.value == "-5"]
+    assert len(int_toks) == 1
+
+
+def test_negative_after_star():
+    """?a * -5 tokenizes as VAR, OP_STAR, INT(-5)."""
+    tokens = tokenize("?a * -5 = ?b.")
+    types = [t.type for t in tokens]
+    assert TokenType.OP_STAR in types
+    int_tok = [t for t in tokens if t.type == TokenType.INT and t.value == "-5"]
+    assert len(int_tok) == 1
+
+
+def test_negative_in_parens():
+    """(-5) tokenizes as LPAREN, INT(-5), RPAREN."""
+    tokens = tokenize("(-5).")
+    types = [t.type for t in tokens]
+    idx_lp = types.index(TokenType.LPAREN)
+    assert types[idx_lp + 1] == TokenType.INT
+    assert tokens[idx_lp + 1].value == "-5"
+    assert types[idx_lp + 2] == TokenType.RPAREN
+
+
 def test_bang_equals_as_ne():
     """!= is tokenized as OP_NE, same as ≠."""
     tokens = tokenize("правило різні(?x, ?y) якщо ?x != ?y.")

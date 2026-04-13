@@ -41,6 +41,12 @@ class TokenType(Enum):
     OP_EQ = auto()        # =
     OP_NE = auto()        # ≠
 
+    # Arithmetic operators
+    OP_PLUS = auto()      # +
+    OP_MINUS = auto()     # -
+    OP_STAR = auto()      # *
+    OP_SLASH = auto()     # /
+
     # Indentation
     NEWLINE = auto()
     INDENT = auto()
@@ -301,6 +307,55 @@ def tokenize(source: str) -> list[Token]:
             advance()  # consume !
             advance()  # consume =
             tokens.append(Token(TokenType.OP_NE, "!=", line, start_col))
+            continue
+
+        # Arithmetic operators
+        if ch == "+":
+            advance()
+            tokens.append(Token(TokenType.OP_PLUS, "+", line, start_col))
+            continue
+        if ch == "*":
+            advance()
+            tokens.append(Token(TokenType.OP_STAR, "*", line, start_col))
+            continue
+        if ch == "/":
+            advance()
+            tokens.append(Token(TokenType.OP_SLASH, "/", line, start_col))
+            continue
+        if ch == "-":
+            # Unary minus on numeric literal: if followed by digit and previous
+            # token is an expression-starting token, emit negative number
+            _unary_ctx = {
+                TokenType.LPAREN, TokenType.COMMA, TokenType.OP_GE,
+                TokenType.OP_LE, TokenType.OP_GT, TokenType.OP_LT,
+                TokenType.OP_EQ, TokenType.OP_NE, TokenType.OP_PLUS,
+                TokenType.OP_MINUS, TokenType.OP_STAR, TokenType.OP_SLASH,
+                TokenType.KW_IF, TokenType.KW_AND, TokenType.NEWLINE,
+                TokenType.INDENT,
+            }
+            next_pos = pos + 1
+            next_is_digit = next_pos < len(source) and source[next_pos].isdigit()
+            prev_is_unary = not tokens or tokens[-1].type in _unary_ctx
+            if next_is_digit and prev_is_unary:
+                advance()  # consume -
+                num_start = pos
+                while pos < len(source) and source[pos].isdigit():
+                    pos += 1
+                    col += 1
+                if pos < len(source) and source[pos] == "." and (
+                    pos + 1 < len(source) and source[pos + 1].isdigit()
+                ):
+                    pos += 1
+                    col += 1
+                    while pos < len(source) and source[pos].isdigit():
+                        pos += 1
+                        col += 1
+                    tokens.append(Token(TokenType.FLOAT, "-" + source[num_start:pos], line, start_col))
+                else:
+                    tokens.append(Token(TokenType.INT, "-" + source[num_start:pos], line, start_col))
+                continue
+            advance()
+            tokens.append(Token(TokenType.OP_MINUS, "-", line, start_col))
             continue
 
         raise LexError(line, start_col, f"unexpected character {ch!r}")
