@@ -1,0 +1,17 @@
+?l = 6.0.
+(1 solution)
+?l = 5.0.
+(1 solution)
+?l = 5.0.
+(1 solution)
+true.
+(1 solution)
+true.
+(1 solution)
+true.
+(1 solution)
+true.
+(1 solution)
+true.
+(1 solution)
+false.
