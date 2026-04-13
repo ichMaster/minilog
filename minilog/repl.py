@@ -23,7 +23,7 @@ Commands:
   :help                — list commands
   :quit | :q           — exit
   :load <file>         — load a .ml file into the current KB
-  :stats               — show KB statistics
+  :stats               — show KB statistics with per-predicate breakdown
   :list <functor>/N    — list all facts and rules for a predicate
   :evolve <N>          — run N generations of production rules
   :saturate            — run forward chaining to fixpoint
@@ -104,8 +104,7 @@ class Repl:
             else:
                 self.load_file(arg)
         elif cmd == ":stats":
-            stats = self.kb.stats()
-            print(f"Facts: {stats['facts']}, Rules: {stats['rules']}, Predicates: {stats['predicates']}")
+            self._cmd_stats()
         elif cmd == ":list":
             self._cmd_list(arg)
         elif cmd == ":evolve":
@@ -122,6 +121,18 @@ class Repl:
             print(f"Unknown command: {cmd}. Type :help for available commands.")
 
         return False
+
+    def _cmd_stats(self) -> None:
+        """Show KB statistics with per-predicate breakdown."""
+        stats = self.kb.stats()
+        print(f"Facts: {stats['facts']}, Rules: {stats['rules']}, Predicates: {stats['predicates']}")
+        for functor, arity, fact_count, rule_count in self.kb.predicates():
+            parts = []
+            if fact_count > 0:
+                parts.append(f"{fact_count} fact{'s' if fact_count != 1 else ''}")
+            if rule_count > 0:
+                parts.append(f"{rule_count} rule{'s' if rule_count != 1 else ''}")
+            print(f"  {functor}/{arity} ({', '.join(parts)})")
 
     def _cmd_list(self, arg: str) -> None:
         """List facts and rules for a predicate."""
