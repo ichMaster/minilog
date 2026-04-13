@@ -21,23 +21,21 @@ class ProductionRule:
     body: list | None = None  # Full condition body for conjunctive conditions
 
 
-def _evaluate_guard(guard, subst: Substitution) -> bool:
-    """Evaluate a guard (Comparison or Negation) under a substitution."""
+def _evaluate_guard(guard, subst: Substitution) -> Substitution | None:
+    """Evaluate a guard under a substitution. Returns extended subst or None."""
     from minilog.evaluator import check_comparison
 
     if isinstance(guard, Comparison):
-        result = check_comparison(guard.left, guard.op, guard.right, subst)
-        return result is not None
+        return check_comparison(guard.left, guard.op, guard.right, subst)
 
     if isinstance(guard, Negation):
-        # Negation-as-failure: guard succeeds if inner goal has no solutions
         try:
             next(solve(guard.inner, KnowledgeBase()))
-            return False
+            return None  # inner succeeded → negation fails
         except StopIteration:
-            return True
+            return subst  # inner failed → negation succeeds
 
-    return True
+    return subst
 
 
 def run_generations(
@@ -60,20 +58,26 @@ def run_generations(
             # Use body if available (conjunctive conditions), otherwise single condition
             if rule.body and len(rule.body) > 1:
                 for subst in solve_body(rule.body, kb, Substitution.empty(), 0, 100):
-                    if rule.guard is not None and not _evaluate_guard(rule.guard, subst):
-                        continue
+                    effective_subst = subst
+                    if rule.guard is not None:
+                        effective_subst = _evaluate_guard(rule.guard, subst)
+                        if effective_subst is None:
+                            continue
                     for add_term in rule.add:
-                        planned_adds.append(Fact(head=subst.apply(add_term)))
+                        planned_adds.append(Fact(head=effective_subst.apply(add_term)))
                     for remove_term in rule.remove:
-                        planned_removes.append(Fact(head=subst.apply(remove_term)))
+                        planned_removes.append(Fact(head=effective_subst.apply(remove_term)))
             else:
                 for subst in solve(rule.condition, kb):
-                    if rule.guard is not None and not _evaluate_guard(rule.guard, subst):
-                        continue
+                    effective_subst = subst
+                    if rule.guard is not None:
+                        effective_subst = _evaluate_guard(rule.guard, subst)
+                        if effective_subst is None:
+                            continue
                     for add_term in rule.add:
-                        planned_adds.append(Fact(head=subst.apply(add_term)))
+                        planned_adds.append(Fact(head=effective_subst.apply(add_term)))
                     for remove_term in rule.remove:
-                        planned_removes.append(Fact(head=subst.apply(remove_term)))
+                        planned_removes.append(Fact(head=effective_subst.apply(remove_term)))
 
         # Phase 2: apply changes atomically, deduplicated
         added: list[Fact] = []
