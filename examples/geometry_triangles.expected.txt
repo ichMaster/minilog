@@ -1,0 +1,39 @@
+?t = t3.
+?t = t4.
+?t = t5.
+(3 solutions)
+false.
+?t = t1.
+?t = t4.
+(2 solutions)
+?t = t5.
+(1 solution)
+?t = t2.
+?t = t3.
+(2 solutions)
+true.
+(1 solution)
+false.
+true.
+(1 solution)
+rule: піфагоровий(t1)
+├─ rule: сторони(?t_109, ?a_109, ?b_109, ?c_109)
+│  ├─ fact: трикутник(?t_110, ?a_110, ?b_110, ?c_110)
+│  ├─ rule: відстань(?a_110, ?b_110, ?ab_110)
+│  │  ├─ fact: точка(?p1_111, ?x1_111, ?y1_111)
+│  │  ├─ fact: точка(?p2_111, ?x2_111, ?y2_111)
+│  │  ├─ builtin: Comparison(left=?p1_111, op='≠', right=?p2_111)
+│  │  └─ builtin: Comparison(left=?d_111, op='=', right=sqrt(+(*(-(?x2_111, ?x1_111), -(?x2_111, ?x1_111)), *(-(?y2_111, ?y1_111), -(?y2_111, ?y1_111)))))
+│  ├─ rule: відстань(?b_110, ?c_110, ?bc_110)
+│  │  ├─ fact: точка(?p1_112, ?x1_112, ?y1_112)
+│  │  ├─ fact: точка(?p2_112, ?x2_112, ?y2_112)
+│  │  ├─ builtin: Comparison(left=?p1_112, op='≠', right=?p2_112)
+│  │  └─ builtin: Comparison(left=?d_112, op='=', right=sqrt(+(*(-(?x2_112, ?x1_112), -(?x2_112, ?x1_112)), *(-(?y2_112, ?y1_112), -(?y2_112, ?y1_112)))))
+│  └─ rule: відстань(?a_110, ?c_110, ?ac_110)
+│     ├─ fact: точка(?p1_113, ?x1_113, ?y1_113)
+│     ├─ fact: точка(?p2_113, ?x2_113, ?y2_113)
+│     ├─ builtin: Comparison(left=?p1_113, op='≠', right=?p2_113)
+│     └─ builtin: Comparison(left=?d_113, op='=', right=sqrt(+(*(-(?x2_113, ?x1_113), -(?x2_113, ?x1_113)), *(-(?y2_113, ?y1_113), -(?y2_113, ?y1_113)))))
+└─ builtin: Comparison(left=+(*(?a_109, ?a_109), *(?c_109, ?c_109)), op='=', right=*(?b_109, ?b_109))
+true.
+(1 solution)
