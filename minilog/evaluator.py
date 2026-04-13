@@ -78,34 +78,92 @@ def evaluate(term: Term, subst: Substitution) -> Num:
 
 
 def check_comparison(left: Term, op: str, right: Term,
-                     subst: Substitution) -> bool:
-    """Evaluate a comparison: left op right under the given substitution.
+                     subst: Substitution) -> Substitution | None:
+    """Evaluate a comparison and return an (optionally extended) substitution.
 
-    Supported operators: ≥, ≤, >, <, =, ≠
-    Equality (=, ≠) works on any terms. Ordering (≥, ≤, >, <) requires numbers.
-    For = and ≠ with arithmetic expressions, both sides are evaluated numerically.
+    Returns the substitution (possibly extended with a binding) on success,
+    or None on failure.
+
+    For `=`: if one side is an unbound variable and the other evaluates to a
+    number, bind the variable to the result (is/2 semantics). If both sides
+    are ground, check numeric or term equality.
+
+    For `≠`: check inequality (no binding).
+    For ordering operators (≥, ≤, >, <): both sides must evaluate to numbers.
     """
-    if op in ("=", "≠"):
-        # Try numeric evaluation first; fall back to term equality
+    if op == "=":
+        return _check_eq_binding(left, right, subst)
+
+    if op == "≠":
+        # Try numeric evaluation first; fall back to term inequality
         try:
             lval = evaluate(left, subst).value
             rval = evaluate(right, subst).value
-            return lval == rval if op == "=" else lval != rval
+            return subst if lval != rval else None
         except EvaluatorError:
-            lval = subst.apply(left)
-            rval = subst.apply(right)
-            return lval == rval if op == "=" else lval != rval
+            lval_t = subst.apply(left)
+            rval_t = subst.apply(right)
+            return subst if lval_t != rval_t else None
 
     lval = evaluate(left, subst).value
     rval = evaluate(right, subst).value
 
+    result = False
     if op == "≥":
-        return lval >= rval
-    if op == "≤":
-        return lval <= rval
-    if op == ">":
-        return lval > rval
-    if op == "<":
-        return lval < rval
+        result = lval >= rval
+    elif op == "≤":
+        result = lval <= rval
+    elif op == ">":
+        result = lval > rval
+    elif op == "<":
+        result = lval < rval
+    else:
+        raise EvaluatorError(f"unknown comparison operator: {op!r}")
 
-    raise EvaluatorError(f"unknown comparison operator: {op!r}")
+    return subst if result else None
+
+
+def _check_eq_binding(left: Term, right: Term,
+                      subst: Substitution) -> Substitution | None:
+    """Handle = with is/2-style binding for unbound variables."""
+    from minilog.terms import Var as VarType
+
+    left_walked = walk(left, subst)
+    right_walked = walk(right, subst)
+
+    left_is_var = isinstance(left_walked, VarType)
+    right_is_var = isinstance(right_walked, VarType)
+
+    # Both unbound — cannot evaluate, try term equality
+    if left_is_var and right_is_var:
+        # Bind left to right (unification)
+        return subst.extend(left_walked, right_walked)
+
+    # Left is unbound variable, right is evaluable → bind left to result
+    if left_is_var:
+        try:
+            result = evaluate(right, subst)
+            return subst.extend(left_walked, result)
+        except EvaluatorError:
+            # Right isn't numeric — try term binding
+            right_resolved = subst.apply(right)
+            return subst.extend(left_walked, right_resolved)
+
+    # Right is unbound variable, left is evaluable → bind right to result
+    if right_is_var:
+        try:
+            result = evaluate(left, subst)
+            return subst.extend(right_walked, result)
+        except EvaluatorError:
+            left_resolved = subst.apply(left)
+            return subst.extend(right_walked, left_resolved)
+
+    # Both sides ground — check equality
+    try:
+        lval = evaluate(left, subst).value
+        rval = evaluate(right, subst).value
+        return subst if lval == rval else None
+    except EvaluatorError:
+        lval_t = subst.apply(left)
+        rval_t = subst.apply(right)
+        return subst if lval_t == rval_t else None

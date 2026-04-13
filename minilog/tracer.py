@@ -75,9 +75,10 @@ class Tracer:
 
         # Comparison goal
         if isinstance(goal, Comparison):
-            if check_comparison(goal.left, goal.op, goal.right, subst):
-                node = ProofNode(goal=goal, kind="builtin", binding=subst)
-                yield subst, node
+            result = check_comparison(goal.left, goal.op, goal.right, subst)
+            if result is not None:
+                node = ProofNode(goal=goal, kind="builtin", binding=result)
+                yield result, node
             return
 
         # Negation-as-failure

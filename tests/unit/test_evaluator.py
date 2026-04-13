@@ -34,27 +34,27 @@ def test_evaluate_unbound_var_raises():
 
 
 def test_comparisons():
-    """All comparison operators work correctly."""
+    """All comparison operators work correctly (return Substitution or None)."""
     s = Substitution.empty()
-    assert check_comparison(Num(5), ">", Num(3), s) is True
-    assert check_comparison(Num(3), ">", Num(5), s) is False
-    assert check_comparison(Num(5), "<", Num(3), s) is False
-    assert check_comparison(Num(3), "<", Num(5), s) is True
-    assert check_comparison(Num(5), "≥", Num(5), s) is True
-    assert check_comparison(Num(5), "≥", Num(3), s) is True
-    assert check_comparison(Num(3), "≤", Num(5), s) is True
-    assert check_comparison(Num(5), "≤", Num(5), s) is True
-    assert check_comparison(Num(5), "=", Num(5), s) is True
-    assert check_comparison(Num(5), "=", Num(3), s) is False
-    assert check_comparison(Num(5), "≠", Num(3), s) is True
-    assert check_comparison(Num(5), "≠", Num(5), s) is False
+    assert check_comparison(Num(5), ">", Num(3), s) is not None
+    assert check_comparison(Num(3), ">", Num(5), s) is None
+    assert check_comparison(Num(5), "<", Num(3), s) is None
+    assert check_comparison(Num(3), "<", Num(5), s) is not None
+    assert check_comparison(Num(5), "≥", Num(5), s) is not None
+    assert check_comparison(Num(5), "≥", Num(3), s) is not None
+    assert check_comparison(Num(3), "≤", Num(5), s) is not None
+    assert check_comparison(Num(5), "≤", Num(5), s) is not None
+    assert check_comparison(Num(5), "=", Num(5), s) is not None
+    assert check_comparison(Num(5), "=", Num(3), s) is None
+    assert check_comparison(Num(5), "≠", Num(3), s) is not None
+    assert check_comparison(Num(5), "≠", Num(5), s) is None
 
 
 def test_comparison_with_variables():
     """Comparisons resolve variables before comparing."""
     s = Substitution.empty().extend(Var("n"), Num(18))
-    assert check_comparison(Var("n"), "≥", Num(18), s) is True
-    assert check_comparison(Var("n"), ">", Num(17), s) is True
+    assert check_comparison(Var("n"), "≥", Num(18), s) is not None
+    assert check_comparison(Var("n"), ">", Num(17), s) is not None
 
 
 def test_comparison_non_numeric_raises():
@@ -66,8 +66,38 @@ def test_comparison_non_numeric_raises():
 def test_float_comparison():
     """Float comparisons work correctly."""
     s = Substitution.empty()
-    assert check_comparison(Num(3.14), ">", Num(3), s) is True
-    assert check_comparison(Num(2.71), "<", Num(3.14), s) is True
+    assert check_comparison(Num(3.14), ">", Num(3), s) is not None
+    assert check_comparison(Num(2.71), "<", Num(3.14), s) is not None
+
+
+# -- is/2 binding tests --
+
+def test_eq_binding_unbound_left():
+    """?a = 3 + 4 binds ?a to 7."""
+    s = Substitution.empty()
+    result = check_comparison(Var("a"), "=", Compound("+", (Num(3), Num(4))), s)
+    assert result is not None
+    assert result.apply(Var("a")) == Num(7)
+
+
+def test_eq_binding_unbound_right():
+    """3 + 4 = ?a binds ?a to 7."""
+    s = Substitution.empty()
+    result = check_comparison(Compound("+", (Num(3), Num(4))), "=", Var("a"), s)
+    assert result is not None
+    assert result.apply(Var("a")) == Num(7)
+
+
+def test_eq_both_ground_true():
+    """7 = 3 + 4 succeeds."""
+    s = Substitution.empty()
+    assert check_comparison(Num(7), "=", Compound("+", (Num(3), Num(4))), s) is not None
+
+
+def test_eq_both_ground_false():
+    """8 = 3 + 4 fails."""
+    s = Substitution.empty()
+    assert check_comparison(Num(8), "=", Compound("+", (Num(3), Num(4))), s) is None
 
 
 # -- Compound arithmetic tests --

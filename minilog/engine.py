@@ -24,10 +24,11 @@ def solve(
     if depth > max_depth:
         raise SolveError(f"Maximum recursion depth {max_depth} exceeded")
 
-    # Comparison goal: delegate to evaluator
+    # Comparison goal: delegate to evaluator (returns Substitution | None)
     if isinstance(goal, Comparison):
-        if check_comparison(goal.left, goal.op, goal.right, subst):
-            yield subst
+        result = check_comparison(goal.left, goal.op, goal.right, subst)
+        if result is not None:
+            yield result
         return
 
     # Negation-as-failure
