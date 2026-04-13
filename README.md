@@ -91,6 +91,7 @@ Nine example files are included in `examples/`:
 | `biology_evolution.ml` | Production rules preserving formal rules |
 | `arithmetic_demo.ml` | Arithmetic expressions: Pythagorean theorem, distance, sqrt/pow/abs |
 | `calculator.ml` | AST walker evaluating arithmetic expression trees via structural recursion |
+| `unit_conversion.ml` | Temperature, distance, BMI, kinetic energy — practical arithmetic formulas |
 | `geometry_triangles.ml` | Triangle classification and theorems (requires Phase 9 arithmetic) |
 
 Run any example:
