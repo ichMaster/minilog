@@ -220,8 +220,9 @@ def cmd_propose_schema(args) -> None:
         sys.exit(1)
 
     selected = None
-    if args.domains:
-        selected = [d.strip() for d in args.domains.split(",")]
+    domains_arg = getattr(args, "domains", None)
+    if domains_arg:
+        selected = [d.strip() for d in domains_arg.split(",")]
 
     print(f"Step 2a: Proposing predicates...")
     try:
