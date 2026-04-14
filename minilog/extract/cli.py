@@ -168,6 +168,11 @@ def register_extract_subcommand(subparsers) -> None:
     ra.add_argument("--min-facts", type=int, default=5, help="Minimum grounded examples to keep a predicate (default: 5)")
     ra.set_defaults(func=_handle_extract)
 
+    # clean — delete everything except step 1 outputs (source/, source.md, metadata.txt)
+    cl = extract_sub.add_parser("clean", help="Delete kb/, .session.json — keep only downloaded sources")
+    cl.add_argument("--name", required=True, help="Book folder name")
+    cl.set_defaults(func=_handle_extract)
+
 
 def cmd_detect_domains(args) -> None:
     """Execute detect-domains command."""
@@ -331,6 +336,33 @@ def cmd_finalize(args) -> None:
     print(f"Load it with: minilog repl {kb_path}")
 
 
+def cmd_clean(args) -> None:
+    """Delete everything except step 1 outputs (source/, source.md, metadata.txt)."""
+    book_dir = _get_kb_dir() / args.name
+    if not book_dir.exists():
+        print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    # Files/dirs to keep (step 1 outputs)
+    keep = {"source", "source.md", "metadata.txt"}
+
+    removed = []
+    for item in book_dir.iterdir():
+        if item.name in keep:
+            continue
+        if item.is_dir():
+            shutil.rmtree(item)
+            removed.append(f"{item.name}/")
+        else:
+            item.unlink()
+            removed.append(item.name)
+
+    if removed:
+        print(f"Cleaned {book_dir.name}: removed {', '.join(removed)}")
+    else:
+        print(f"Nothing to clean in {book_dir.name}")
+
+
 def cmd_run_all(args) -> None:
     """Execute all extraction steps (2-8) after download."""
     book_dir = _get_kb_dir() / args.name
@@ -380,10 +412,11 @@ def _handle_extract(args) -> None:
         "generate-rules": cmd_generate_rules,
         "finalize": cmd_finalize,
         "run-all": cmd_run_all,
+        "clean": cmd_clean,
     }
     handler = cmd_map.get(args.extract_command)
     if handler:
         handler(args)
     else:
-        print("Usage: minilog extract <download|detect-domains|propose-schema|extract-facts|propose-rules|generate-rules|finalize|run-all>")
+        print("Usage: minilog extract <download|...|run-all|clean>")
         sys.exit(1)
