@@ -49,7 +49,7 @@ def call_llm(
     prompt: str,
     system: str = "",
     model: str | None = None,
-    max_tokens: int = 65535,
+    max_tokens: int = 64000,
     temperature: float = 0.0,
 ) -> str:
     """Call the Anthropic API and return the text response.
@@ -92,7 +92,7 @@ def call_llm_json(
     prompt: str,
     system: str = "",
     model: str | None = None,
-    max_tokens: int = 65535,
+    max_tokens: int = 64000,
 ) -> dict | list:
     """Call LLM and parse the response as JSON."""
     raw = call_llm(prompt, system=system, model=model, max_tokens=max_tokens)
