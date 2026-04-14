@@ -157,6 +157,11 @@ def register_extract_subcommand(subparsers) -> None:
     fn.add_argument("--name", required=True, help="Book folder name")
     fn.set_defaults(func=_handle_extract)
 
+    # run-all (steps 2-8: detect-domains → propose-schema → extract-facts → propose-rules → generate-rules → finalize)
+    ra = extract_sub.add_parser("run-all", help="Run all extraction steps (2-8) after download")
+    ra.add_argument("--name", required=True, help="Book folder name")
+    ra.set_defaults(func=_handle_extract)
+
 
 def cmd_detect_domains(args) -> None:
     """Execute detect-domains command."""
@@ -308,6 +313,44 @@ def cmd_finalize(args) -> None:
     print(f"Load it with: minilog repl {kb_path}")
 
 
+def cmd_run_all(args) -> None:
+    """Execute all extraction steps (2-8) after download."""
+    book_dir = _get_kb_dir() / args.name
+    if not book_dir.exists():
+        print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
+        print(f"Run 'minilog extract download --name {args.name} --sources ...' first.")
+        sys.exit(1)
+
+    if not (book_dir / "source.md").exists():
+        print(f"Error: source.md not found in {book_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    steps = [
+        ("Step 2: Detecting domains...", cmd_detect_domains),
+        ("Step 3: Proposing schema...", cmd_propose_schema),
+        ("Step 4: Extracting facts...", cmd_extract_facts),
+        ("Step 5: Proposing rules...", cmd_propose_rules),
+        ("Step 6: Generating rules...", cmd_generate_rules),
+        ("Step 7: Finalizing...", cmd_finalize),
+    ]
+
+    print(f"Running full extraction pipeline on '{args.name}'...")
+    print(f"{'=' * 50}")
+
+    for label, cmd_func in steps:
+        print(f"\n{label}")
+        print(f"{'-' * 50}")
+        try:
+            cmd_func(args)
+        except SystemExit:
+            print(f"\nPipeline stopped at: {label}", file=sys.stderr)
+            sys.exit(1)
+
+    print(f"\n{'=' * 50}")
+    print(f"Pipeline complete! Knowledge base: {book_dir / 'knowledge_base.ml'}")
+    print(f"Load it with: minilog repl {book_dir / 'knowledge_base.ml'}")
+
+
 def _handle_extract(args) -> None:
     """Dispatch extract subcommands."""
     cmd_map = {
@@ -318,10 +361,11 @@ def _handle_extract(args) -> None:
         "propose-rules": cmd_propose_rules,
         "generate-rules": cmd_generate_rules,
         "finalize": cmd_finalize,
+        "run-all": cmd_run_all,
     }
     handler = cmd_map.get(args.extract_command)
     if handler:
         handler(args)
     else:
-        print("Usage: minilog extract <download|detect-domains|propose-schema|extract-facts|propose-rules|generate-rules|finalize>")
+        print("Usage: minilog extract <download|detect-domains|propose-schema|extract-facts|propose-rules|generate-rules|finalize|run-all>")
         sys.exit(1)
