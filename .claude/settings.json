@@ -51,7 +51,12 @@
       "mcp__github-mcp__create_repository",
       "mcp__github-mcp__search_code",
       "mcp__github-mcp__search_repositories",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(brew list:*)",
+      "Bash(brew install:*)",
+      "Bash(pandoc docs/euclidean-geometry-from-axioms.md -o docs/euclidean-geometry-from-axioms.docx --from markdown --to docx)",
+      "Bash(pandoc docs/euclidean-geometry-from-axioms-en.md -o docs/euclidean-geometry-from-axioms-en.docx --from markdown --to docx)",
+      "Bash(MINILOG_KB_DIR=/tmp/minilog_test_kb .venv/bin/minilog extract download --name test_book --sources /tmp/test_doc.txt)"
     ]
   }
 }

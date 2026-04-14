@@ -1,1 +1,3 @@
 Execute phase $ARGUMENTS of the minilog project using the skill defined in .claude/skills/execute-phase.md. Follow every step in that skill exactly.
+
+After completing the phase, update the version number in both `minilog/__init__.py` and `pyproject.toml` to `0.1.<phase_number>` where `<phase_number>` is the phase that was just executed. For example, after completing phase 11, set version to `0.1.11`. Commit this version bump as part of the final phase commit or as a separate commit.
