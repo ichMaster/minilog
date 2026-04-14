@@ -150,4 +150,85 @@ minilog extract propose-schema --name <name> [--domains domain1,domain2]
 
 ---
 
-*Цей документ є частиною проекту minilog. Phases 13-14 додадуть команди для витягування фактів і індукції правил.*
+---
+
+## Команда extract-facts (Phase 13)
+
+```bash
+minilog extract extract-facts --name <name>
+```
+
+LLM читає `source.md` і витягує конкретні ground facts відповідно до схеми. Кожен факт має цитату з тексту. Великі тексти автоматично розбиваються на chunks. Результат валідується: перевіряється арність, наявність предиката в схемі, і чи цитата дійсно є в тексті.
+
+**Результат:** `facts.ml` — файл з фактами та цитатами-коментарями.
+
+---
+
+## Команда propose-rules (Phase 14)
+
+```bash
+minilog extract propose-rules --name <name>
+```
+
+LLM аналізує витягнуті факти та схему і пропонує кандидатів на правила — закономірності, які можна виразити як minilog rules.
+
+---
+
+## Команда generate-rules (Phase 14)
+
+```bash
+minilog extract generate-rules --name <name> [--rules rule1,rule2]
+```
+
+Для кожного обраного кандидата LLM генерує конкретний minilog rule body. Правила валідуються парсером minilog.
+
+**Результат:** `rules.ml` — файл зі згенерованими правилами.
+
+---
+
+## Команда finalize (Phase 14)
+
+```bash
+minilog extract finalize --name <name>
+```
+
+Об'єднує `schema.ml`, `facts.ml`, `rules.ml` у єдиний `knowledge_base.ml` з provenance header. Додає ontological profile до `domains.md`.
+
+```bash
+# Після finalize можна завантажити базу в REPL:
+minilog repl knowledge_bases/my_book/knowledge_base.ml
+```
+
+---
+
+## Повний workflow (end-to-end)
+
+```bash
+# 1. Завантажити текст
+minilog extract download --name prolog --sources https://en.wikipedia.org/wiki/Prolog
+
+# 2. Виявити домени
+minilog extract detect-domains --name prolog
+
+# 3. Запропонувати схему
+minilog extract propose-schema --name prolog
+
+# 4. Витягти факти
+minilog extract extract-facts --name prolog
+
+# 5. Запропонувати правила
+minilog extract propose-rules --name prolog
+
+# 6. Згенерувати правила
+minilog extract generate-rules --name prolog
+
+# 7. Фіналізувати
+minilog extract finalize --name prolog
+
+# 8. Запитати базу знань
+minilog repl knowledge_bases/prolog/knowledge_base.ml
+```
+
+---
+
+*Цей документ є частиною проекту minilog.*

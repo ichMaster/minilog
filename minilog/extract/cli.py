@@ -136,6 +136,27 @@ def register_extract_subcommand(subparsers) -> None:
     ps.add_argument("--domains", default=None, help="Comma-separated domain names to include (default: all detected)")
     ps.set_defaults(func=_handle_extract)
 
+    # extract-facts
+    ef = extract_sub.add_parser("extract-facts", help="Extract facts from source text (LLM)")
+    ef.add_argument("--name", required=True, help="Book folder name")
+    ef.set_defaults(func=_handle_extract)
+
+    # propose-rules
+    pr = extract_sub.add_parser("propose-rules", help="Propose candidate rules (LLM)")
+    pr.add_argument("--name", required=True, help="Book folder name")
+    pr.set_defaults(func=_handle_extract)
+
+    # generate-rules
+    gr = extract_sub.add_parser("generate-rules", help="Generate rule bodies (LLM)")
+    gr.add_argument("--name", required=True, help="Book folder name")
+    gr.add_argument("--rules", default=None, help="Comma-separated rule names (default: all proposed)")
+    gr.set_defaults(func=_handle_extract)
+
+    # finalize
+    fn = extract_sub.add_parser("finalize", help="Merge into knowledge_base.ml")
+    fn.add_argument("--name", required=True, help="Book folder name")
+    fn.set_defaults(func=_handle_extract)
+
 
 def cmd_detect_domains(args) -> None:
     """Execute detect-domains command."""
@@ -198,14 +219,109 @@ def cmd_propose_schema(args) -> None:
     print(f"\nResults saved to {book_dir}/schema.ml, {book_dir}/grounding.json, {book_dir}/domains.md")
 
 
+def cmd_extract_facts(args) -> None:
+    """Execute extract-facts command."""
+    from minilog.extract.steps.step3_extract_facts import extract_facts
+
+    book_dir = _get_kb_dir() / args.name
+    if not book_dir.exists():
+        print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Extracting facts from {book_dir}/source.md...")
+    try:
+        facts = extract_facts(book_dir)
+    except DownloadError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    valid = sum(1 for f in facts if f.get("valid"))
+    invalid = len(facts) - valid
+    print(f"Extracted {len(facts)} facts ({valid} valid, {invalid} with issues)")
+    print(f"Results saved to {book_dir}/facts.ml")
+
+
+def cmd_propose_rules(args) -> None:
+    """Execute propose-rules command."""
+    from minilog.extract.steps.step4_propose_rules import propose_rules
+
+    book_dir = _get_kb_dir() / args.name
+    if not book_dir.exists():
+        print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Proposing rules...")
+    try:
+        rules = propose_rules(book_dir)
+    except DownloadError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Proposed {len(rules)} rule candidate(s):")
+    for r in rules:
+        print(f"  {r.get('name', '?')}: {r.get('description', '')}")
+    print(f"\nResults saved to session.")
+
+
+def cmd_generate_rules(args) -> None:
+    """Execute generate-rules command."""
+    from minilog.extract.steps.step5_generate_rules import generate_rules
+
+    book_dir = _get_kb_dir() / args.name
+    if not book_dir.exists():
+        print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    selected = None
+    if hasattr(args, "rules") and args.rules:
+        selected = [r.strip() for r in args.rules.split(",")]
+
+    print(f"Generating rule bodies...")
+    try:
+        rules = generate_rules(book_dir, selected_rules=selected)
+    except DownloadError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    valid = sum(1 for r in rules if r.get("valid"))
+    print(f"Generated {len(rules)} rules ({valid} valid)")
+    print(f"Results saved to {book_dir}/rules.ml")
+
+
+def cmd_finalize(args) -> None:
+    """Execute finalize command."""
+    from minilog.extract.steps.finalize import finalize
+
+    book_dir = _get_kb_dir() / args.name
+    if not book_dir.exists():
+        print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Finalizing knowledge base...")
+    try:
+        kb_path = finalize(book_dir)
+    except DownloadError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Knowledge base written to {kb_path}")
+    print(f"Load it with: minilog repl {kb_path}")
+
+
 def _handle_extract(args) -> None:
     """Dispatch extract subcommands."""
-    if args.extract_command == "download":
-        cmd_download(args)
-    elif args.extract_command == "detect-domains":
-        cmd_detect_domains(args)
-    elif args.extract_command == "propose-schema":
-        cmd_propose_schema(args)
+    cmd_map = {
+        "download": cmd_download,
+        "detect-domains": cmd_detect_domains,
+        "propose-schema": cmd_propose_schema,
+        "extract-facts": cmd_extract_facts,
+        "propose-rules": cmd_propose_rules,
+        "generate-rules": cmd_generate_rules,
+        "finalize": cmd_finalize,
+    }
+    handler = cmd_map.get(args.extract_command)
+    if handler:
+        handler(args)
     else:
-        print("Usage: minilog extract <download|detect-domains|propose-schema|extract-facts>")
+        print("Usage: minilog extract <download|detect-domains|propose-schema|extract-facts|propose-rules|generate-rules|finalize>")
         sys.exit(1)
