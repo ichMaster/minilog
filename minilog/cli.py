@@ -174,6 +174,10 @@ def main() -> None:
     version_parser = subparsers.add_parser("version", help="Print version")
     version_parser.set_defaults(func=cmd_version)
 
+    # extract (text extraction commands)
+    from minilog.extract.cli import register_extract_subcommand
+    register_extract_subcommand(subparsers)
+
     args = parser.parse_args()
     if args.command is None:
         parser.print_help()
