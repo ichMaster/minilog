@@ -425,6 +425,12 @@ minilog містить 9 вбудованих прикладів в директ
 
 ---
 
+## Text Extraction
+
+minilog може перетворювати тексти (URL, PDF, DOCX, EPUB, TXT, HTML, MD) у бази знань через команду `minilog extract download`. Див. [docs/text-extraction.md](text-extraction.md).
+
+---
+
 ## Повідомлення про помилки
 
 Повідомлення — англійською, з позицією (рядок/колонка) де можливо:

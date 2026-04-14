@@ -93,6 +93,16 @@ Nine example files are included in `examples/`:
 | `calculator.ml` | AST walker evaluating arithmetic expression trees via structural recursion |
 | `unit_conversion.ml` | Temperature, distance, BMI, kinetic energy — practical arithmetic formulas |
 | `geometry_triangles.ml` | Triangle classification and theorems (requires Phase 9 arithmetic) |
+
+## Text Extraction
+
+Convert texts from various sources into minilog knowledge bases:
+
+```bash
+minilog extract download --name my_book --sources https://en.wikipedia.org/wiki/Prolog,./notes.pdf
+```
+
+Supports URLs, PDF, DOCX, EPUB, TXT, HTML, and Markdown files. See [docs/text-extraction.md](docs/text-extraction.md).
 | `evolution_aging.ml` | Population dynamics simulation using production rules over generations |
 
 Run any example:
