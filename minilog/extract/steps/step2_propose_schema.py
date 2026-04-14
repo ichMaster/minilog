@@ -74,7 +74,7 @@ For each domain, propose 3-8 predicates with Ukrainian functor names, arities, a
 
 Respond with JSON only."""
 
-    schema = call_llm_json(prompt, system=PROPOSE_SYSTEM, max_tokens=4096)
+    schema = call_llm_json(prompt, system=PROPOSE_SYSTEM, max_tokens=64000)
 
     state["proposed_schema"] = schema
     state["selected_domains"] = selected_domains
@@ -111,7 +111,7 @@ def grounding_check(book_dir: Path) -> dict:
 
 Respond with JSON only. Use "functor/arity" as keys."""
 
-    grounding = call_llm_json(prompt, system=GROUNDING_SYSTEM, max_tokens=16384)
+    grounding = call_llm_json(prompt, system=GROUNDING_SYSTEM, max_tokens=64000)
 
     state["grounding"] = grounding
     state["current_step"] = "schema-done"

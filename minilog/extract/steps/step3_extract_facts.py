@@ -82,7 +82,7 @@ def extract_facts(book_dir: Path) -> list[dict]:
 Respond with a JSON array only."""
 
         try:
-            facts = call_llm_json(prompt, system=SYSTEM_PROMPT, max_tokens=8192)
+            facts = call_llm_json(prompt, system=SYSTEM_PROMPT, max_tokens=64000)
         except DownloadError:
             continue  # Skip failed chunks
 

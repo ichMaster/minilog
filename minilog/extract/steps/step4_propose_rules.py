@@ -79,7 +79,7 @@ def propose_rules(book_dir: Path) -> list[dict]:
 
 Respond with JSON array only."""
 
-    rules = call_llm_json(prompt, system=SYSTEM_PROMPT, max_tokens=4096)
+    rules = call_llm_json(prompt, system=SYSTEM_PROMPT, max_tokens=64000)
 
     if not isinstance(rules, list):
         raise DownloadError(str(book_dir), f"LLM returned non-list: {type(rules)}")

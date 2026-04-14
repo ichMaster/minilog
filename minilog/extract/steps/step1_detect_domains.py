@@ -50,7 +50,7 @@ def detect_domains(book_dir: Path) -> list[dict]:
 
 Respond with a JSON array only, no additional text."""
 
-    domains = call_llm_json(prompt, system=SYSTEM_PROMPT, max_tokens=4096)
+    domains = call_llm_json(prompt, system=SYSTEM_PROMPT, max_tokens=64000)
 
     if not isinstance(domains, list):
         raise DownloadError(str(book_dir), f"LLM returned non-list response: {type(domains)}")

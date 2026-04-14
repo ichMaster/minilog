@@ -73,7 +73,7 @@ def generate_rules(book_dir: Path, selected_rules: list[str] | None = None) -> l
 
 Respond with JSON array only."""
 
-    generated = call_llm_json(prompt, system=SYSTEM_PROMPT, max_tokens=4096)
+    generated = call_llm_json(prompt, system=SYSTEM_PROMPT, max_tokens=64000)
 
     if not isinstance(generated, list):
         raise DownloadError(str(book_dir), f"LLM returned non-list: {type(generated)}")
