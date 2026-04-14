@@ -6,27 +6,50 @@
 
 ## Огляд
 
-`minilog extract` — набір CLI-команд для перетворення текстів (URL, PDF, DOCX, EPUB тощо) у бази знань minilog. Phase 11 реалізує першу команду — `download`.
+`minilog extract` — набір CLI-команд для перетворення текстів (URL, PDF, DOCX, EPUB тощо) у бази знань minilog.
 
-Повний workflow (Phases 11-14):
-1. **download** — завантажити і конвертувати джерела в Markdown (Phase 11)
-2. **detect-domains** — виявити предметні області через LLM (Phase 12)
-3. **propose-schema** — запропонувати предикати через LLM (Phase 12)
-4. **extract-facts** — витягти факти з тексту через LLM (Phase 13)
-5. **propose-rules** / **generate-rules** — індукція правил (Phase 14)
-6. **finalize** — зібрати knowledge_base.ml (Phase 14)
+Повний workflow:
+1. **download** — завантажити і конвертувати джерела в Markdown
+2. **detect-domains** — виявити предметні області через LLM
+3. **propose-schema** — запропонувати предикати через LLM з grounding check
+4. **extract-facts** — витягти факти з тексту через LLM
+5. **propose-rules** / **generate-rules** — індукція правил через LLM
+6. **finalize** — зібрати фінальний `<name>.ml`
+7. **run-all** — виконати кроки 2-7 однією командою
+8. **clean** — видалити результати кроків 2-7, залишити джерела
+
+---
+
+## Структура папки книги
+
+```
+knowledge_bases/<name>/
+  ├── source.md              # Об'єднаний Markdown усіх джерел
+  ├── metadata.txt           # Метадані (назва, автор, мова, дата)
+  ├── .session.json          # Стан workflow (автоматично)
+  ├── source/                # Завантажені оригінали (Step 1)
+  │   ├── slug.html          # Оригінал HTML
+  │   ├── slug.md            # Конвертований Markdown
+  │   ├── slug.pdf           # Оригінал PDF
+  │   └── ...
+  └── kb/                    # Результати extraction (Steps 2-7)
+      ├── <name>.ml           # Фінальна база знань
+      └── artifacts/          # Проміжні файли
+          ├── detected_domains.json
+          ├── domains.md
+          ├── schema.ml
+          ├── grounding.json
+          ├── facts.ml
+          └── rules.ml
+```
 
 ---
 
 ## Команда download
 
-### Синтаксис
-
 ```bash
 minilog extract download --name <name> --sources <source1,source2,...> [--title T] [--author A] [--language L]
 ```
-
-### Параметри
 
 | Параметр | Обов'язковий | Опис |
 |----------|-------------|------|
@@ -38,166 +61,124 @@ minilog extract download --name <name> --sources <source1,source2,...> [--title 
 
 ### Підтримувані формати
 
-| Формат | Бібліотека | Як працює |
-|--------|-----------|-----------|
-| URL (http/https) | trafilatura | Витягує основний контент, видаляє навігацію/рекламу |
-| PDF | pymupdf4llm | Конвертує з збереженням заголовків і таблиць |
-| DOCX | python-docx | Зберігає заголовки Word як Markdown headings |
-| EPUB | ebooklib + beautifulsoup4 | Об'єднує розділи з метаданими |
-| TXT | stdlib | Копіює як є |
-| HTML (файл) | trafilatura | Як URL, але з локального файлу |
-| MD | stdlib | Копіює як є |
+| Формат | Бібліотека |
+|--------|-----------|
+| URL (http/https) | trafilatura |
+| PDF | pymupdf4llm |
+| DOCX | python-docx |
+| EPUB | ebooklib + beautifulsoup4 |
+| TXT | stdlib |
+| HTML (файл) | trafilatura |
+| MD | stdlib |
 
-### Структура папки книги
-
-Після `download` папка `knowledge_bases/<name>/` містить:
-
-```
-knowledge_bases/my_book/
-  ├── source.md          # Об'єднаний Markdown усіх джерел
-  ├── metadata.txt       # Метадані (назва, автор, мова, дата)
-  ├── slug1.html         # Оригінал першого джерела
-  ├── slug1.md           # Конвертований Markdown
-  ├── slug2.pdf          # Оригінал другого джерела
-  └── slug2.md           # Конвертований Markdown
-```
-
-### Об'єднання джерел
-
-Якщо передано кілька джерел, всі конвертуються окремо, а потім об'єднуються в `source.md` з роздільниками `---`:
-
-```markdown
-% Source: https://example.com/article
-
-[вміст першого джерела]
-
----
-
-% Source: notes.pdf
-
-[вміст другого джерела]
-```
+Завантажені оригінали зберігаються в `source/`, об'єднаний текст — в `source.md`.
 
 ### Обробка помилок
 
 - Дублікат назви: помилка, папка не створюється
 - Помилка конвертації: повний rollback (папка видаляється)
-- Неіснуючий файл: чітке повідомлення із шляхом
-- Непідтримуваний формат: повідомлення з розширенням файлу
+- Неіснуючий файл або непідтримуваний формат: чітке повідомлення
 
 ### Змінна середовища
 
 `MINILOG_KB_DIR` — альтернативний шлях до папки баз знань (за замовчуванням `./knowledge_bases/`).
 
-### Приклад
+---
+
+## Команда detect-domains
 
 ```bash
-# Завантажити статтю з Wikipedia
-minilog extract download --name prolog_article --sources https://en.wikipedia.org/wiki/Prolog
-
-# Завантажити PDF + нотатки
-minilog extract download --name my_notes --sources ./paper.pdf,./notes.txt --title "My Research"
-
-# Перевірити результат
-cat knowledge_bases/prolog_article/metadata.txt
-cat knowledge_bases/prolog_article/source.md | head -20
+minilog extract detect-domains --name <name> [--min-relevance 0.5]
 ```
+
+LLM читає `source.md` і визначає які предметні області присутні в тексті, з обґрунтуванням і прикладами. Результати фільтруються за `--min-relevance` (за замовчуванням 0.5).
+
+**Вимоги:** `ANTHROPIC_API_KEY` в `.env` або як змінна середовища.
+
+**Результат:** `kb/artifacts/detected_domains.json`, `kb/artifacts/domains.md`
 
 ---
 
-## Команда detect-domains (Phase 12)
-
-### Синтаксис
+## Команда propose-schema
 
 ```bash
-minilog extract detect-domains --name <name>
-```
-
-Читає `source.md` з папки книги, відправляє до LLM (Anthropic API) разом з каталогом ~25 вбудованих доменів. LLM визначає які домени присутні в тексті, з обґрунтуванням і прикладами.
-
-**Вимоги:** змінна `ANTHROPIC_API_KEY` має бути встановлена.
-
-**Результат:**
-- `detected_domains.json` — JSON з виявленими доменами
-- `domains.md` — звіт у Markdown
-- `.session.json` — стан workflow
-
-### Приклад
-
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-minilog extract detect-domains --name prolog_article
-```
-
----
-
-## Команда propose-schema (Phase 12)
-
-### Синтаксис
-
-```bash
-minilog extract propose-schema --name <name> [--domains domain1,domain2]
+minilog extract propose-schema --name <name> [--domains d1,d2] [--min-facts 5]
 ```
 
 Два кроки:
-1. **Step 2a:** Для кожного обраного домену LLM пропонує minilog предикати (функтор, арність, ролі аргументів)
-2. **Step 2b:** Для кожного предиката LLM шукає 2-3 конкретних приклади в тексті (grounding check)
+1. **Step 2a:** Для кожного домену LLM пропонує 20-30 minilog предикатів
+2. **Step 2b:** Для кожного предиката LLM шукає ВСІ приклади в тексті (grounding check). Предикати з менш ніж `--min-facts` прикладів відкидаються
 
-**Результат:**
-- `schema.ml` — запропоновані предикати як коментарі (grounded/theoretical)
-- `grounding.json` — результати перевірки з цитатами
-- `domains.md` — оновлений звіт зі статистикою grounding
+**Результат:** `kb/artifacts/schema.ml`, `kb/artifacts/grounding.json`, `kb/artifacts/domains.md`
 
 ---
 
----
-
-## Команда extract-facts (Phase 13)
+## Команда extract-facts
 
 ```bash
 minilog extract extract-facts --name <name>
 ```
 
-LLM читає `source.md` і витягує конкретні ground facts відповідно до схеми. Кожен факт має цитату з тексту. Великі тексти автоматично розбиваються на chunks. Результат валідується: перевіряється арність, наявність предиката в схемі, і чи цитата дійсно є в тексті.
+LLM витягує ground facts з тексту відповідно до схеми. Кожен факт має цитату. Великі тексти автоматично розбиваються на chunks. Валідація: арність, наявність предиката в схемі, цитата в тексті.
 
-**Результат:** `facts.ml` — файл з фактами та цитатами-коментарями.
+**Результат:** `kb/artifacts/facts.ml`
 
 ---
 
-## Команда propose-rules (Phase 14)
+## Команда propose-rules
 
 ```bash
 minilog extract propose-rules --name <name>
 ```
 
-LLM аналізує витягнуті факти та схему і пропонує кандидатів на правила — закономірності, які можна виразити як minilog rules.
+LLM аналізує факти та схему і пропонує кандидатів на правила.
 
 ---
 
-## Команда generate-rules (Phase 14)
+## Команда generate-rules
 
 ```bash
 minilog extract generate-rules --name <name> [--rules rule1,rule2]
 ```
 
-Для кожного обраного кандидата LLM генерує конкретний minilog rule body. Правила валідуються парсером minilog.
+Для кожного кандидата LLM генерує minilog rule body. Правила валідуються парсером.
 
-**Результат:** `rules.ml` — файл зі згенерованими правилами.
+**Результат:** `kb/artifacts/rules.ml`
 
 ---
 
-## Команда finalize (Phase 14)
+## Команда finalize
 
 ```bash
 minilog extract finalize --name <name>
 ```
 
-Об'єднує `schema.ml`, `facts.ml`, `rules.ml` у єдиний `knowledge_base.ml` з provenance header. Додає ontological profile до `domains.md`.
+Об'єднує `schema.ml`, `facts.ml`, `rules.ml` у фінальний `kb/<name>.ml`. Додає ontological profile до `domains.md`.
 
 ```bash
-# Після finalize можна завантажити базу в REPL:
-minilog repl knowledge_bases/my_book/knowledge_base.ml
+# Завантажити базу в REPL:
+minilog repl knowledge_bases/prolog/kb/prolog.ml
 ```
+
+---
+
+## Команда run-all
+
+```bash
+minilog extract run-all --name <name> [--min-relevance 0.5] [--min-facts 5]
+```
+
+Виконує всі кроки 2-7 послідовно однією командою. Зупиняється при першій помилці.
+
+---
+
+## Команда clean
+
+```bash
+minilog extract clean --name <name>
+```
+
+Видаляє `kb/` та `.session.json`. Залишає тільки результати Step 1: `source/`, `source.md`, `metadata.txt`. Корисно для перезапуску extraction pipeline з нуля.
 
 ---
 
@@ -207,26 +188,23 @@ minilog repl knowledge_bases/my_book/knowledge_base.ml
 # 1. Завантажити текст
 minilog extract download --name prolog --sources https://en.wikipedia.org/wiki/Prolog
 
-# 2. Виявити домени
-minilog extract detect-domains --name prolog
+# 2-7. Запустити весь pipeline
+minilog extract run-all --name prolog
 
-# 3. Запропонувати схему
-minilog extract propose-schema --name prolog
-
-# 4. Витягти факти
+# Або покроково:
+minilog extract detect-domains --name prolog --min-relevance 0.6
+minilog extract propose-schema --name prolog --min-facts 10
 minilog extract extract-facts --name prolog
-
-# 5. Запропонувати правила
 minilog extract propose-rules --name prolog
-
-# 6. Згенерувати правила
 minilog extract generate-rules --name prolog
-
-# 7. Фіналізувати
 minilog extract finalize --name prolog
 
 # 8. Запитати базу знань
-minilog repl knowledge_bases/prolog/knowledge_base.ml
+minilog repl knowledge_bases/prolog/kb/prolog.ml
+
+# Перезапустити з нуля (зберігаючи завантажене):
+minilog extract clean --name prolog
+minilog extract run-all --name prolog
 ```
 
 ---
