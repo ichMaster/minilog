@@ -56,7 +56,11 @@
       "Bash(brew install:*)",
       "Bash(pandoc docs/euclidean-geometry-from-axioms.md -o docs/euclidean-geometry-from-axioms.docx --from markdown --to docx)",
       "Bash(pandoc docs/euclidean-geometry-from-axioms-en.md -o docs/euclidean-geometry-from-axioms-en.docx --from markdown --to docx)",
-      "Bash(MINILOG_KB_DIR=/tmp/minilog_test_kb .venv/bin/minilog extract download --name test_book --sources /tmp/test_doc.txt)"
+      "Bash(MINILOG_KB_DIR=/tmp/minilog_test_kb .venv/bin/minilog extract download --name test_book --sources /tmp/test_doc.txt)",
+      "Bash(mkdir -p kb)",
+      "Bash(mv detected_domains.json domains.md grounding.json schema.ml facts.ml rules.ml knowledge_base.ml kb/)",
+      "Bash(mkdir -p source)",
+      "Bash(mv en_wikipedia_org_wiki_swarm_intelligence.html en_wikipedia_org_wiki_swarm_intelligence.md metadata.txt source/)"
     ]
   }
 }
