@@ -60,7 +60,14 @@
       "Bash(mkdir -p kb)",
       "Bash(mv detected_domains.json domains.md grounding.json schema.ml facts.ml rules.ml knowledge_base.ml kb/)",
       "Bash(mkdir -p source)",
-      "Bash(mv en_wikipedia_org_wiki_swarm_intelligence.html en_wikipedia_org_wiki_swarm_intelligence.md metadata.txt source/)"
+      "Bash(mv en_wikipedia_org_wiki_swarm_intelligence.html en_wikipedia_org_wiki_swarm_intelligence.md metadata.txt source/)",
+      "Bash(mkdir -p artifacts)",
+      "Bash(mv detected_domains.json domains.md schema.ml grounding.json facts.ml rules.ml artifacts/)",
+      "Bash(sed -i '' 's|book_dir / \"source.md\"|source_md\\(book_dir\\)|' minilog/extract/steps/step1_detect_domains.py)",
+      "Bash(sed -i '' '1,5s|from minilog.extract.errors|from minilog.extract.paths import source_md\\\\nfrom minilog.extract.errors|' minilog/extract/steps/step1_detect_domains.py)",
+      "Bash(sed -i '' 's|book_dir / \"source.md\"|source_md\\(book_dir\\)|g' minilog/extract/steps/step2_propose_schema.py)",
+      "Bash(sed -i '' '1,5s|from minilog.extract.errors|from minilog.extract.paths import source_md\\\\nfrom minilog.extract.errors|' minilog/extract/steps/step2_propose_schema.py)",
+      "Bash(sed -i '' 's|book_dir / \"source.md\"|source_md\\(book_dir\\)|' minilog/extract/steps/step3_extract_facts.py)"
     ]
   }
 }
