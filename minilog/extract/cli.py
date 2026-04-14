@@ -100,7 +100,7 @@ def cmd_download(args) -> None:
 
         print(f"Done. Book folder created: {target_dir}")
         print(f"  {len(results)} source(s) converted")
-        print(f"  source.md and metadata.txt written")
+        print(f"  {args.name}.md and metadata.txt written")
 
     except (DownloadError, Exception) as e:
         # Rollback: remove the partially populated folder
@@ -168,7 +168,7 @@ def register_extract_subcommand(subparsers) -> None:
     ra.add_argument("--min-facts", type=int, default=5, help="Minimum grounded examples to keep a predicate (default: 5)")
     ra.set_defaults(func=_handle_extract)
 
-    # clean — delete everything except step 1 outputs (source/, source.md, metadata.txt)
+    # clean — delete everything except step 1 outputs (source/, <name>.md, metadata.txt)
     cl = extract_sub.add_parser("clean", help="Delete kb/, .session.json — keep only downloaded sources")
     cl.add_argument("--name", required=True, help="Book folder name")
     cl.set_defaults(func=_handle_extract)
@@ -185,7 +185,7 @@ def cmd_detect_domains(args) -> None:
         sys.exit(1)
 
     min_rel = getattr(args, "min_relevance", 0.5)
-    print(f"Detecting domains in {book_dir}/source.md (min relevance: {min_rel})...")
+    print(f"Detecting domains in {book_dir}/{args.name}.md (min relevance: {min_rel})...")
     try:
         domains = detect_domains(book_dir)
     except DownloadError as e:
@@ -256,7 +256,7 @@ def cmd_extract_facts(args) -> None:
         print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Extracting facts from {book_dir}/source.md...")
+    print(f"Extracting facts from {book_dir}/{args.name}.md...")
     try:
         facts = extract_facts(book_dir)
     except DownloadError as e:
@@ -337,7 +337,7 @@ def cmd_finalize(args) -> None:
 
 
 def cmd_clean(args) -> None:
-    """Delete everything except step 1 outputs (source/, source.md, metadata.txt)."""
+    """Delete everything except step 1 outputs (source/, <name>.md, metadata.txt)."""
     book_dir = _get_kb_dir() / args.name
     if not book_dir.exists():
         print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
@@ -372,7 +372,7 @@ def cmd_run_all(args) -> None:
         sys.exit(1)
 
     if not (book_dir / f"{args.name}.md").exists():
-        print(f"Error: source.md not found in {book_dir}", file=sys.stderr)
+        print(f"Error: {args.name}.md not found in {book_dir}", file=sys.stderr)
         sys.exit(1)
 
     steps = [

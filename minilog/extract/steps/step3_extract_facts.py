@@ -5,6 +5,7 @@ from pathlib import Path
 
 from minilog.extract.errors import DownloadError
 from minilog.extract.llm import call_llm_json
+from minilog.extract.paths import source_md
 from minilog.extract.session import load_session, save_session
 
 

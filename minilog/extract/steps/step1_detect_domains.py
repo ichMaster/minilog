@@ -5,6 +5,7 @@ from pathlib import Path
 
 from minilog.extract.domains import format_catalog_for_prompt
 from minilog.extract.errors import DownloadError
+from minilog.extract.paths import source_md
 from minilog.extract.llm import call_llm_json
 from minilog.extract.session import load_session, save_session
 
@@ -25,7 +26,7 @@ def detect_domains(book_dir: Path) -> list[dict]:
     """Run domain detection on the source text."""
     source_path = source_md(book_dir)
     if not source_path.exists():
-        raise DownloadError(str(book_dir), "source.md not found — run download first")
+        raise DownloadError(str(book_dir), f"{source_path.name} not found — run download first")
 
     source_text = source_path.read_text(encoding="utf-8")
     # Truncate to ~50K chars for LLM context
