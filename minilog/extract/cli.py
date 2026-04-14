@@ -125,11 +125,87 @@ def register_extract_subcommand(subparsers) -> None:
     dl.add_argument("--language", default=None, help="Override auto-detected language")
     dl.set_defaults(func=_handle_extract)
 
+    # detect-domains
+    dd = extract_sub.add_parser("detect-domains", help="Detect knowledge domains in source text (LLM)")
+    dd.add_argument("--name", required=True, help="Book folder name")
+    dd.set_defaults(func=_handle_extract)
+
+    # propose-schema
+    ps = extract_sub.add_parser("propose-schema", help="Propose predicates and ground them (LLM)")
+    ps.add_argument("--name", required=True, help="Book folder name")
+    ps.add_argument("--domains", default=None, help="Comma-separated domain names to include (default: all detected)")
+    ps.set_defaults(func=_handle_extract)
+
+
+def cmd_detect_domains(args) -> None:
+    """Execute detect-domains command."""
+    from minilog.extract.steps.step1_detect_domains import detect_domains
+    from minilog.extract.steps.domains_writer import write_domains_md
+
+    book_dir = _get_kb_dir() / args.name
+    if not book_dir.exists():
+        print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Detecting domains in {book_dir}/source.md...")
+    try:
+        domains = detect_domains(book_dir)
+        write_domains_md(book_dir)
+    except DownloadError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Detected {len(domains)} domain(s):")
+    for d in domains:
+        print(f"  {d['name']} (relevance: {d.get('relevance', '?')}): {d.get('justification', '')}")
+    print(f"\nResults saved to {book_dir}/detected_domains.json and {book_dir}/domains.md")
+
+
+def cmd_propose_schema(args) -> None:
+    """Execute propose-schema command (Step 2a + 2b)."""
+    from minilog.extract.steps.step2_propose_schema import propose_predicates, grounding_check
+    from minilog.extract.steps.domains_writer import write_domains_md
+
+    book_dir = _get_kb_dir() / args.name
+    if not book_dir.exists():
+        print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    selected = None
+    if args.domains:
+        selected = [d.strip() for d in args.domains.split(",")]
+
+    print(f"Step 2a: Proposing predicates...")
+    try:
+        schema = propose_predicates(book_dir, selected_domains=selected)
+    except DownloadError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    total_preds = sum(len(preds) for preds in schema.values())
+    print(f"  Proposed {total_preds} predicates across {len(schema)} domain(s)")
+
+    print(f"Step 2b: Grounding check...")
+    try:
+        grounding = grounding_check(book_dir)
+        write_domains_md(book_dir)
+    except DownloadError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    grounded = sum(1 for v in grounding.values() if v.get("grounded"))
+    print(f"  {grounded}/{len(grounding)} predicates grounded in text")
+    print(f"\nResults saved to {book_dir}/schema.ml, {book_dir}/grounding.json, {book_dir}/domains.md")
+
 
 def _handle_extract(args) -> None:
     """Dispatch extract subcommands."""
     if args.extract_command == "download":
         cmd_download(args)
+    elif args.extract_command == "detect-domains":
+        cmd_detect_domains(args)
+    elif args.extract_command == "propose-schema":
+        cmd_propose_schema(args)
     else:
         print("Usage: minilog extract <download|detect-domains|propose-schema|extract-facts>")
         sys.exit(1)

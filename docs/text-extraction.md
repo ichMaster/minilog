@@ -105,4 +105,49 @@ cat knowledge_bases/prolog_article/source.md | head -20
 
 ---
 
-*Цей документ є частиною проекту minilog. Phases 12-14 додадуть LLM-powered команди для виявлення доменів, витягування фактів і індукції правил.*
+## Команда detect-domains (Phase 12)
+
+### Синтаксис
+
+```bash
+minilog extract detect-domains --name <name>
+```
+
+Читає `source.md` з папки книги, відправляє до LLM (Anthropic API) разом з каталогом ~25 вбудованих доменів. LLM визначає які домени присутні в тексті, з обґрунтуванням і прикладами.
+
+**Вимоги:** змінна `ANTHROPIC_API_KEY` має бути встановлена.
+
+**Результат:**
+- `detected_domains.json` — JSON з виявленими доменами
+- `domains.md` — звіт у Markdown
+- `.session.json` — стан workflow
+
+### Приклад
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+minilog extract detect-domains --name prolog_article
+```
+
+---
+
+## Команда propose-schema (Phase 12)
+
+### Синтаксис
+
+```bash
+minilog extract propose-schema --name <name> [--domains domain1,domain2]
+```
+
+Два кроки:
+1. **Step 2a:** Для кожного обраного домену LLM пропонує minilog предикати (функтор, арність, ролі аргументів)
+2. **Step 2b:** Для кожного предиката LLM шукає 2-3 конкретних приклади в тексті (grounding check)
+
+**Результат:**
+- `schema.ml` — запропоновані предикати як коментарі (grounded/theoretical)
+- `grounding.json` — результати перевірки з цитатами
+- `domains.md` — оновлений звіт зі статистикою grounding
+
+---
+
+*Цей документ є частиною проекту minilog. Phases 13-14 додадуть команди для витягування фактів і індукції правил.*
