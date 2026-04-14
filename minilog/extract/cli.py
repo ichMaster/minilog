@@ -76,18 +76,20 @@ def cmd_download(args) -> None:
         print(f"Error: book folder already exists: {target_dir}", file=sys.stderr)
         sys.exit(1)
 
-    # Create the folder
+    # Create the folder structure
     target_dir.mkdir(parents=True)
+    source_dir = target_dir / "source"
+    source_dir.mkdir()
 
     results = []
     try:
         for source in sources:
             source_type = _classify_source(source)
             print(f"  Converting {source} ({source_type})...")
-            result = _convert_source(source, source_type, target_dir)
+            result = _convert_source(source, source_type, source_dir)
             results.append(result)
 
-        # Merge and write metadata
+        # Merge into root, metadata into root
         merge_sources(results, target_dir)
         write_metadata(
             target_dir, name, results,
