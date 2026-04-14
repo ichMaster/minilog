@@ -171,5 +171,6 @@ def _write_facts_ml(book_dir: Path, facts: list[dict]) -> None:
             lines.append(f"{pred}({args}).  % \"{citation}\"")
         lines.append("")
 
-    facts_path = book_dir / "facts.ml"
+    from minilog.extract.paths import kb_dir
+    facts_path = kb_dir(book_dir) / "facts.ml"
     facts_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

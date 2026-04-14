@@ -18,7 +18,7 @@ Respond with a JSON array of objects, each with:
 - "example_passage": a short quote from the text (max 100 chars) that illustrates this domain
 - "is_catalog": boolean (true if from the built-in catalog, false if novel)
 
-Only include domains with relevance >= 0.3. Sort by relevance descending."""
+Only include domains with relevance >= 0.5. Sort by relevance descending."""
 
 
 def detect_domains(book_dir: Path) -> list[dict]:
@@ -45,7 +45,7 @@ def detect_domains(book_dir: Path) -> list[dict]:
 ## Instructions:
 1. Check each domain from the catalog — is it present in the text?
 2. If you see domains NOT in the catalog, add them as novel domains.
-3. Only include domains with relevance >= 0.3.
+3. Only include domains with relevance >= 0.5.
 4. For each domain, provide a justification and a short example passage from the text.
 
 Respond with a JSON array only, no additional text."""
@@ -62,7 +62,9 @@ Respond with a JSON array only, no additional text."""
     save_session(book_dir, state)
 
     # Write domains to a JSON file for easy inspection
-    domains_json = book_dir / "detected_domains.json"
+    from minilog.extract.paths import kb_dir
+    out = kb_dir(book_dir)
+    domains_json = out / "detected_domains.json"
     domains_json.write_text(json.dumps(domains, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     return domains

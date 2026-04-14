@@ -128,12 +128,14 @@ def register_extract_subcommand(subparsers) -> None:
     # detect-domains
     dd = extract_sub.add_parser("detect-domains", help="Detect knowledge domains in source text (LLM)")
     dd.add_argument("--name", required=True, help="Book folder name")
+    dd.add_argument("--min-relevance", type=float, default=0.5, help="Minimum relevance score to keep (default: 0.5)")
     dd.set_defaults(func=_handle_extract)
 
     # propose-schema
     ps = extract_sub.add_parser("propose-schema", help="Propose predicates and ground them (LLM)")
     ps.add_argument("--name", required=True, help="Book folder name")
     ps.add_argument("--domains", default=None, help="Comma-separated domain names to include (default: all detected)")
+    ps.add_argument("--min-facts", type=int, default=5, help="Minimum grounded examples to keep a predicate (default: 5)")
     ps.set_defaults(func=_handle_extract)
 
     # extract-facts
@@ -160,6 +162,8 @@ def register_extract_subcommand(subparsers) -> None:
     # run-all (steps 2-8: detect-domains → propose-schema → extract-facts → propose-rules → generate-rules → finalize)
     ra = extract_sub.add_parser("run-all", help="Run all extraction steps (2-8) after download")
     ra.add_argument("--name", required=True, help="Book folder name")
+    ra.add_argument("--min-relevance", type=float, default=0.5, help="Minimum relevance score for domains (default: 0.5)")
+    ra.add_argument("--min-facts", type=int, default=5, help="Minimum grounded examples to keep a predicate (default: 5)")
     ra.set_defaults(func=_handle_extract)
 
 
@@ -173,18 +177,29 @@ def cmd_detect_domains(args) -> None:
         print(f"Error: book folder not found: {book_dir}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Detecting domains in {book_dir}/source.md...")
+    min_rel = getattr(args, "min_relevance", 0.5)
+    print(f"Detecting domains in {book_dir}/source.md (min relevance: {min_rel})...")
     try:
         domains = detect_domains(book_dir)
-        write_domains_md(book_dir)
     except DownloadError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Detected {len(domains)} domain(s):")
+    # Filter by relevance
+    before = len(domains)
+    domains = [d for d in domains if d.get("relevance", 0) >= min_rel]
+
+    # Update session with filtered domains
+    from minilog.extract.session import load_session, save_session
+    state = load_session(book_dir)
+    state["detected_domains"] = domains
+    save_session(book_dir, state)
+    write_domains_md(book_dir)
+
+    print(f"Detected {before} domain(s), kept {len(domains)} (relevance >= {min_rel}):")
     for d in domains:
         print(f"  {d['name']} (relevance: {d.get('relevance', '?')}): {d.get('justification', '')}")
-    print(f"\nResults saved to {book_dir}/detected_domains.json and {book_dir}/domains.md")
+    print(f"\nResults saved to {book_dir}/kb/detected_domains.json and {book_dir}/kb/domains.md")
 
 
 def cmd_propose_schema(args) -> None:
@@ -211,9 +226,10 @@ def cmd_propose_schema(args) -> None:
     total_preds = sum(len(preds) for preds in schema.values())
     print(f"  Proposed {total_preds} predicates across {len(schema)} domain(s)")
 
-    print(f"Step 2b: Grounding check...")
+    min_facts = getattr(args, "min_facts", 5)
+    print(f"Step 2b: Grounding check (min {min_facts} facts per predicate)...")
     try:
-        grounding = grounding_check(book_dir)
+        grounding = grounding_check(book_dir, min_facts=min_facts)
         write_domains_md(book_dir)
     except DownloadError as e:
         print(f"Error: {e}", file=sys.stderr)
@@ -221,7 +237,7 @@ def cmd_propose_schema(args) -> None:
 
     grounded = sum(1 for v in grounding.values() if v.get("grounded"))
     print(f"  {grounded}/{len(grounding)} predicates grounded in text")
-    print(f"\nResults saved to {book_dir}/schema.ml, {book_dir}/grounding.json, {book_dir}/domains.md")
+    print(f"\nResults saved to {book_dir}/kb/schema.ml, {book_dir}/kb/grounding.json, {book_dir}/kb/domains.md")
 
 
 def cmd_extract_facts(args) -> None:
@@ -243,7 +259,7 @@ def cmd_extract_facts(args) -> None:
     valid = sum(1 for f in facts if f.get("valid"))
     invalid = len(facts) - valid
     print(f"Extracted {len(facts)} facts ({valid} valid, {invalid} with issues)")
-    print(f"Results saved to {book_dir}/facts.ml")
+    print(f"Results saved to {book_dir}/kb/facts.ml")
 
 
 def cmd_propose_rules(args) -> None:
@@ -290,7 +306,7 @@ def cmd_generate_rules(args) -> None:
 
     valid = sum(1 for r in rules if r.get("valid"))
     print(f"Generated {len(rules)} rules ({valid} valid)")
-    print(f"Results saved to {book_dir}/rules.ml")
+    print(f"Results saved to {book_dir}/kb/rules.ml")
 
 
 def cmd_finalize(args) -> None:
@@ -347,8 +363,8 @@ def cmd_run_all(args) -> None:
             sys.exit(1)
 
     print(f"\n{'=' * 50}")
-    print(f"Pipeline complete! Knowledge base: {book_dir / 'knowledge_base.ml'}")
-    print(f"Load it with: minilog repl {book_dir / 'knowledge_base.ml'}")
+    print(f"Pipeline complete! Knowledge base: {book_dir / 'kb' / 'knowledge_base.ml'}")
+    print(f"Load it with: minilog repl {book_dir / 'kb' / 'knowledge_base.ml'}")
 
 
 def _handle_extract(args) -> None:

@@ -57,6 +57,7 @@ def write_domains_md(book_dir: Path) -> Path:
         lines.append(f"- Theoretical: {total - grounded}")
         lines.append("")
 
-    domains_path = book_dir / "domains.md"
+    from minilog.extract.paths import kb_dir
+    domains_path = kb_dir(book_dir) / "domains.md"
     domains_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return domains_path

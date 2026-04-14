@@ -11,7 +11,10 @@ def finalize(book_dir: Path) -> Path:
     """Merge schema.ml, facts.ml, and rules.ml into knowledge_base.ml."""
     state = load_session(book_dir)
 
-    # Read metadata
+    from minilog.extract.paths import kb_dir
+    out = kb_dir(book_dir)
+
+    # Read metadata from book root
     meta_path = book_dir / "metadata.txt"
     meta_lines = meta_path.read_text(encoding="utf-8") if meta_path.exists() else ""
 
@@ -25,31 +28,31 @@ def finalize(book_dir: Path) -> Path:
             parts.append(f"% {line}")
     parts.append("")
 
-    # Schema (as comments)
-    schema_path = book_dir / "schema.ml"
+    # Schema (from kb/)
+    schema_path = out / "schema.ml"
     if schema_path.exists():
         parts.append("% " + "=" * 60)
         parts.append("% Schema")
         parts.append("% " + "=" * 60)
         parts.append(schema_path.read_text(encoding="utf-8"))
 
-    # Facts
-    facts_path = book_dir / "facts.ml"
+    # Facts (from kb/)
+    facts_path = out / "facts.ml"
     if facts_path.exists():
         parts.append("% " + "=" * 60)
         parts.append("% Facts")
         parts.append("% " + "=" * 60)
         parts.append(facts_path.read_text(encoding="utf-8"))
 
-    # Rules
-    rules_path = book_dir / "rules.ml"
+    # Rules (from kb/)
+    rules_path = out / "rules.ml"
     if rules_path.exists():
         parts.append("% " + "=" * 60)
         parts.append("% Rules")
         parts.append("% " + "=" * 60)
         parts.append(rules_path.read_text(encoding="utf-8"))
 
-    kb_path = book_dir / "knowledge_base.ml"
+    kb_path = out / "knowledge_base.ml"
     kb_path.write_text("\n".join(parts) + "\n", encoding="utf-8")
 
     # Update domains.md with ontological profile
@@ -67,7 +70,8 @@ def _write_ontological_profile(book_dir: Path, state: dict) -> None:
     write_domains_md(book_dir)
 
     # Then append ontological profile
-    domains_path = book_dir / "domains.md"
+    from minilog.extract.paths import kb_dir
+    domains_path = kb_dir(book_dir) / "domains.md"
     content = domains_path.read_text(encoding="utf-8")
 
     facts = state.get("extracted_facts", [])
