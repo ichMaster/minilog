@@ -62,8 +62,8 @@ Respond with a JSON array only, no additional text."""
     save_session(book_dir, state)
 
     # Write domains to a JSON file for easy inspection
-    from minilog.extract.paths import kb_dir
-    out = kb_dir(book_dir)
+    from minilog.extract.paths import artifacts_dir
+    out = artifacts_dir(book_dir)
     domains_json = out / "detected_domains.json"
     domains_json.write_text(json.dumps(domains, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 

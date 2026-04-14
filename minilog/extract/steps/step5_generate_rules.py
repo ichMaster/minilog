@@ -141,6 +141,6 @@ def _write_rules_ml(book_dir: Path, rules: list[dict]) -> None:
             lines.append(r.get("rule_text", ""))
         lines.append("")
 
-    from minilog.extract.paths import kb_dir
-    rules_path = kb_dir(book_dir) / "rules.ml"
+    from minilog.extract.paths import artifacts_dir
+    rules_path = artifacts_dir(book_dir) / "rules.ml"
     rules_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

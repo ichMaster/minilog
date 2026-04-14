@@ -146,8 +146,8 @@ Respond with JSON only. Use "functor/arity" as keys."""
     _write_schema_ml(book_dir, filtered_schema, grounding)
 
     # Write grounding results
-    from minilog.extract.paths import kb_dir
-    out = kb_dir(book_dir)
+    from minilog.extract.paths import artifacts_dir
+    out = artifacts_dir(book_dir)
     grounding_path = out / "grounding.json"
     grounding_path.write_text(json.dumps(grounding, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -168,6 +168,6 @@ def _write_schema_ml(book_dir: Path, schema: dict, grounding: dict) -> None:
             lines.append(f"% {key} ({status}) — {p.get('description', '')} — args: {args_desc}")
         lines.append("")
 
-    from minilog.extract.paths import kb_dir
-    schema_path = kb_dir(book_dir) / "schema.ml"
+    from minilog.extract.paths import artifacts_dir
+    schema_path = artifacts_dir(book_dir) / "schema.ml"
     schema_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

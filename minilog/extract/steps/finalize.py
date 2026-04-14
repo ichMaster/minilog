@@ -11,8 +11,9 @@ def finalize(book_dir: Path) -> Path:
     """Merge schema.ml, facts.ml, and rules.ml into knowledge_base.ml."""
     state = load_session(book_dir)
 
-    from minilog.extract.paths import kb_dir
+    from minilog.extract.paths import kb_dir, artifacts_dir
     out = kb_dir(book_dir)
+    arts = artifacts_dir(book_dir)
 
     # Read metadata from book root
     meta_path = book_dir / "metadata.txt"
@@ -28,30 +29,31 @@ def finalize(book_dir: Path) -> Path:
             parts.append(f"% {line}")
     parts.append("")
 
-    # Schema (from kb/)
-    schema_path = out / "schema.ml"
+    # Schema (from kb/artifacts/)
+    schema_path = arts / "schema.ml"
     if schema_path.exists():
         parts.append("% " + "=" * 60)
         parts.append("% Schema")
         parts.append("% " + "=" * 60)
         parts.append(schema_path.read_text(encoding="utf-8"))
 
-    # Facts (from kb/)
-    facts_path = out / "facts.ml"
+    # Facts (from kb/artifacts/)
+    facts_path = arts / "facts.ml"
     if facts_path.exists():
         parts.append("% " + "=" * 60)
         parts.append("% Facts")
         parts.append("% " + "=" * 60)
         parts.append(facts_path.read_text(encoding="utf-8"))
 
-    # Rules (from kb/)
-    rules_path = out / "rules.ml"
+    # Rules (from kb/artifacts/)
+    rules_path = arts / "rules.ml"
     if rules_path.exists():
         parts.append("% " + "=" * 60)
         parts.append("% Rules")
         parts.append("% " + "=" * 60)
         parts.append(rules_path.read_text(encoding="utf-8"))
 
+    # knowledge_base.ml goes to kb/ (not artifacts/)
     kb_path = out / "knowledge_base.ml"
     kb_path.write_text("\n".join(parts) + "\n", encoding="utf-8")
 
@@ -70,8 +72,8 @@ def _write_ontological_profile(book_dir: Path, state: dict) -> None:
     write_domains_md(book_dir)
 
     # Then append ontological profile
-    from minilog.extract.paths import kb_dir
-    domains_path = kb_dir(book_dir) / "domains.md"
+    from minilog.extract.paths import artifacts_dir
+    domains_path = artifacts_dir(book_dir) / "domains.md"
     content = domains_path.read_text(encoding="utf-8")
 
     facts = state.get("extracted_facts", [])

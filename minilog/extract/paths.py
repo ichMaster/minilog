@@ -8,3 +8,10 @@ def kb_dir(book_dir: Path) -> Path:
     d = book_dir / "kb"
     d.mkdir(exist_ok=True)
     return d
+
+
+def artifacts_dir(book_dir: Path) -> Path:
+    """Return the kb/artifacts directory for intermediate files, creating it if needed."""
+    d = book_dir / "kb" / "artifacts"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
