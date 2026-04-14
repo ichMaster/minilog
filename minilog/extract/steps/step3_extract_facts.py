@@ -91,7 +91,7 @@ Respond with a JSON array only."""
 
         # Deduplicate across chunks
         for fact in facts:
-            key = f"{fact.get('predicate')}/{fact.get('arity')}({','.join(fact.get('args', []))})"
+            key = f"{fact.get('predicate')}/{fact.get('arity')}({','.join(str(a) for a in fact.get('args', []))})"
             if key not in seen_keys:
                 seen_keys.add(key)
                 all_facts.append(fact)
@@ -166,7 +166,7 @@ def _write_facts_ml(book_dir: Path, facts: list[dict]) -> None:
     for pred, pred_facts in sorted(by_pred.items()):
         lines.append(f"% {pred}")
         for f in pred_facts:
-            args = ", ".join(f.get("args", []))
+            args = ", ".join(str(a) for a in f.get("args", []))
             citation = f.get("citation", "")
             lines.append(f"{pred}({args}).  % \"{citation}\"")
         lines.append("")
