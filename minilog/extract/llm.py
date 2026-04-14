@@ -49,7 +49,7 @@ def call_llm(
     prompt: str,
     system: str = "",
     model: str | None = None,
-    max_tokens: int = 4096,
+    max_tokens: int = 65535,
     temperature: float = 0.0,
 ) -> str:
     """Call the Anthropic API and return the text response.
@@ -72,8 +72,12 @@ def call_llm(
             if system:
                 kwargs["system"] = system
 
-            response = client.messages.create(**kwargs)
-            return response.content[0].text
+            # Use streaming to avoid timeout on long requests
+            text_parts = []
+            with client.messages.stream(**kwargs) as stream:
+                for text in stream.text_stream:
+                    text_parts.append(text)
+            return "".join(text_parts)
 
         except Exception as e:
             error_str = str(e)
@@ -88,7 +92,7 @@ def call_llm_json(
     prompt: str,
     system: str = "",
     model: str | None = None,
-    max_tokens: int = 4096,
+    max_tokens: int = 65535,
 ) -> dict | list:
     """Call LLM and parse the response as JSON."""
     raw = call_llm(prompt, system=system, model=model, max_tokens=max_tokens)
