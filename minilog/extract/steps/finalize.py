@@ -53,8 +53,8 @@ def finalize(book_dir: Path) -> Path:
         parts.append("% " + "=" * 60)
         parts.append(rules_path.read_text(encoding="utf-8"))
 
-    # knowledge_base.ml goes to kb/ (not artifacts/)
-    kb_path = out / "knowledge_base.ml"
+    # Final file named after the book folder
+    kb_path = out / f"{book_dir.name}.ml"
     kb_path.write_text("\n".join(parts) + "\n", encoding="utf-8")
 
     # Update domains.md with ontological profile

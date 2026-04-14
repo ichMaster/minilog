@@ -365,8 +365,8 @@ def cmd_run_all(args) -> None:
             sys.exit(1)
 
     print(f"\n{'=' * 50}")
-    print(f"Pipeline complete! Knowledge base: {book_dir / 'kb' / 'knowledge_base.ml'}")
-    print(f"Load it with: minilog repl {book_dir / 'kb' / 'knowledge_base.ml'}")
+    print(f"Pipeline complete! Knowledge base: {book_dir / 'kb' / (args.name + '.ml')}")
+    print(f"Load it with: minilog repl {book_dir / 'kb' / (args.name + '.ml')}")
 
 
 def _handle_extract(args) -> None:
