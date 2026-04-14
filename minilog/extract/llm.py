@@ -3,6 +3,7 @@
 import json
 import os
 import time
+from pathlib import Path
 
 from minilog.extract.errors import DownloadError
 
@@ -12,8 +13,26 @@ MAX_RETRIES = 3
 RETRY_DELAY = 2.0
 
 
+def _load_dotenv() -> None:
+    """Load .env file from project root if it exists."""
+    env_path = Path.cwd() / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if value and key not in os.environ:
+            os.environ[key] = value
+
+
 def _get_client():
-    """Create an Anthropic client from environment."""
+    """Create an Anthropic client from environment or .env file."""
+    _load_dotenv()
+
     try:
         import anthropic
     except ImportError:
@@ -21,7 +40,7 @@ def _get_client():
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        raise DownloadError("llm", "ANTHROPIC_API_KEY environment variable not set")
+        raise DownloadError("llm", "ANTHROPIC_API_KEY not set — add it to .env or export it")
 
     return anthropic.Anthropic(api_key=api_key)
 
