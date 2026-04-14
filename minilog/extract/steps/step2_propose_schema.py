@@ -111,7 +111,7 @@ def grounding_check(book_dir: Path) -> dict:
 
 Respond with JSON only. Use "functor/arity" as keys."""
 
-    grounding = call_llm_json(prompt, system=GROUNDING_SYSTEM, max_tokens=4096)
+    grounding = call_llm_json(prompt, system=GROUNDING_SYSTEM, max_tokens=16384)
 
     state["grounding"] = grounding
     state["current_step"] = "schema-done"

@@ -106,5 +106,12 @@ def call_llm_json(
 
     try:
         return json.loads(text)
-    except json.JSONDecodeError as e:
-        raise DownloadError("llm", f"Failed to parse LLM response as JSON: {e}\nRaw response:\n{raw[:500]}")
+    except json.JSONDecodeError:
+        # Try to salvage truncated JSON by closing open braces/brackets
+        for suffix in ["}", "]}", "]}}", '"]}', '"}]}', '"]}}}']:
+            try:
+                return json.loads(text + suffix)
+            except json.JSONDecodeError:
+                continue
+        raise DownloadError("llm", f"Failed to parse LLM response as JSON (possibly truncated). "
+                           f"Response length: {len(raw)} chars. First 300 chars:\n{raw[:300]}")
