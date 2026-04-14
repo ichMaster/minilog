@@ -42,7 +42,7 @@ Set "grounded" to true only if there are 5 or more examples. If fewer than 5 exa
 
 def propose_predicates(book_dir: Path, selected_domains: list[str] | None = None) -> dict:
     """Step 2a: Propose predicates for selected domains."""
-    source_path = book_dir / "source.md"
+    source_path = source_md(book_dir)
     if not source_path.exists():
         raise DownloadError(str(book_dir), "source.md not found")
 
@@ -87,7 +87,7 @@ Respond with JSON only."""
 
 def grounding_check(book_dir: Path, min_facts: int = 5) -> dict:
     """Step 2b: Check each proposed predicate against the source text."""
-    source_path = book_dir / "source.md"
+    source_path = source_md(book_dir)
     state = load_session(book_dir)
     schema = state.get("proposed_schema")
     if not schema:

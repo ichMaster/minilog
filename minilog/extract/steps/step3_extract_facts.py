@@ -55,7 +55,7 @@ def _format_schema_for_prompt(book_dir: Path) -> str:
 
 def extract_facts(book_dir: Path) -> list[dict]:
     """Extract facts from source text using the approved schema."""
-    source_path = book_dir / "source.md"
+    source_path = source_md(book_dir)
     if not source_path.exists():
         raise DownloadError(str(book_dir), "source.md not found")
 

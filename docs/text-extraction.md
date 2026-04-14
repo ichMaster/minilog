@@ -24,7 +24,7 @@
 
 ```
 knowledge_bases/<name>/
-  ├── source.md              # Об'єднаний Markdown усіх джерел
+  ├── <name>.md              # Об'єднаний Markdown усіх джерел
   ├── metadata.txt           # Метадані (назва, автор, мова, дата)
   ├── .session.json          # Стан workflow (автоматично)
   ├── source/                # Завантажені оригінали (Step 1)
@@ -71,7 +71,7 @@ minilog extract download --name <name> --sources <source1,source2,...> [--title 
 | HTML (файл) | trafilatura |
 | MD | stdlib |
 
-Завантажені оригінали зберігаються в `source/`, об'єднаний текст — в `source.md`.
+Завантажені оригінали зберігаються в `source/`, об'єднаний текст — в `<name>.md`.
 
 ### Обробка помилок
 
@@ -91,7 +91,7 @@ minilog extract download --name <name> --sources <source1,source2,...> [--title 
 minilog extract detect-domains --name <name> [--min-relevance 0.5]
 ```
 
-LLM читає `source.md` і визначає які предметні області присутні в тексті, з обґрунтуванням і прикладами. Результати фільтруються за `--min-relevance` (за замовчуванням 0.5).
+LLM читає `<name>.md` і визначає які предметні області присутні в тексті, з обґрунтуванням і прикладами. Результати фільтруються за `--min-relevance` (за замовчуванням 0.5).
 
 **Вимоги:** `ANTHROPIC_API_KEY` в `.env` або як змінна середовища.
 
@@ -178,7 +178,7 @@ minilog extract run-all --name <name> [--min-relevance 0.5] [--min-facts 5]
 minilog extract clean --name <name>
 ```
 
-Видаляє `kb/` та `.session.json`. Залишає тільки результати Step 1: `source/`, `source.md`, `metadata.txt`. Корисно для перезапуску extraction pipeline з нуля.
+Видаляє `kb/` та `.session.json`. Залишає тільки результати Step 1: `source/`, `<name>.md`, `metadata.txt`. Корисно для перезапуску extraction pipeline з нуля.
 
 ---
 

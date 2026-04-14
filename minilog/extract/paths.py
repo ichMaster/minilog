@@ -15,3 +15,8 @@ def artifacts_dir(book_dir: Path) -> Path:
     d = book_dir / "kb" / "artifacts"
     d.mkdir(parents=True, exist_ok=True)
     return d
+
+
+def source_md(book_dir: Path) -> Path:
+    """Return path to the merged source file (<book_name>.md)."""
+    return book_dir / f"{book_dir.name}.md"

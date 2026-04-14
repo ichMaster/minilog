@@ -40,7 +40,7 @@ def write_metadata(
     if not language:
         try:
             from langdetect import detect
-            source_md = target_dir / "source.md"
+            source_md = target_dir / f"{target_dir.name}.md"
             if source_md.exists():
                 sample = source_md.read_text(encoding="utf-8")[:5000]
                 language = detect(sample)

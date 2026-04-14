@@ -55,7 +55,7 @@ def propose_rules(book_dir: Path) -> list[dict]:
         for p in preds:
             schema_lines.append(f"- {p['functor']}/{p['arity']} ({domain}): {p.get('description', '')}")
 
-    source_path = book_dir / "source.md"
+    source_path = source_md(book_dir)
     source_excerpt = ""
     if source_path.exists():
         source_excerpt = source_path.read_text(encoding="utf-8")[:10000]

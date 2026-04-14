@@ -15,6 +15,6 @@ def merge_sources(results: list[ConversionResult], target_dir: Path) -> Path:
         parts.append(f"{header}\n\n{content}")
 
     merged = "\n\n---\n\n".join(parts)
-    source_path = target_dir / "source.md"
+    source_path = target_dir / f"{target_dir.name}.md"
     source_path.write_text(merged, encoding="utf-8")
     return source_path

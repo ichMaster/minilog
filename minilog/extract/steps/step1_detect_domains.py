@@ -23,7 +23,7 @@ Only include domains with relevance >= 0.5. Sort by relevance descending."""
 
 def detect_domains(book_dir: Path) -> list[dict]:
     """Run domain detection on the source text."""
-    source_path = book_dir / "source.md"
+    source_path = source_md(book_dir)
     if not source_path.exists():
         raise DownloadError(str(book_dir), "source.md not found — run download first")
 

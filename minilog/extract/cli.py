@@ -344,7 +344,7 @@ def cmd_clean(args) -> None:
         sys.exit(1)
 
     # Files/dirs to keep (step 1 outputs)
-    keep = {"source", "source.md", "metadata.txt"}
+    keep = {"source", f"{args.name}.md", "metadata.txt"}
 
     removed = []
     for item in book_dir.iterdir():
@@ -371,7 +371,7 @@ def cmd_run_all(args) -> None:
         print(f"Run 'minilog extract download --name {args.name} --sources ...' first.")
         sys.exit(1)
 
-    if not (book_dir / "source.md").exists():
+    if not (book_dir / f"{args.name}.md").exists():
         print(f"Error: source.md not found in {book_dir}", file=sys.stderr)
         sys.exit(1)
 
