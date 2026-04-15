@@ -137,7 +137,7 @@ def register_extract_subcommand(subparsers) -> None:
     ps = extract_sub.add_parser("propose-schema", help="Propose predicates and ground them (LLM)")
     ps.add_argument("--name", required=True, help="Book folder name")
     ps.add_argument("--domains", default=None, help="Comma-separated domain names to include (default: all detected)")
-    ps.add_argument("--min-facts", type=int, default=5, help="Minimum grounded examples to keep a predicate (default: 5)")
+    ps.add_argument("--min-facts", type=int, default=3, help="Minimum grounded examples to keep a predicate (default: 3)")
     ps.set_defaults(func=_handle_extract)
 
     # extract-facts
@@ -165,7 +165,7 @@ def register_extract_subcommand(subparsers) -> None:
     ra = extract_sub.add_parser("run-all", help="Run all extraction steps (2-8) after download")
     ra.add_argument("--name", required=True, help="Book folder name")
     ra.add_argument("--min-relevance", type=float, default=0.5, help="Minimum relevance score for domains (default: 0.5)")
-    ra.add_argument("--min-facts", type=int, default=5, help="Minimum grounded examples to keep a predicate (default: 5)")
+    ra.add_argument("--min-facts", type=int, default=3, help="Minimum grounded examples to keep a predicate (default: 3)")
     ra.set_defaults(func=_handle_extract)
 
     # clean — delete everything except step 1 outputs (source/, <name>.md, metadata.txt)
@@ -286,9 +286,13 @@ def cmd_propose_rules(args) -> None:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Proposed {len(rules)} rule candidate(s):")
+    intra = sum(1 for r in rules if r.get("type") == "intra-domain")
+    cross = len(rules) - intra
+    print(f"Proposed {len(rules)} rule candidate(s) ({intra} intra-domain, {cross} cross-domain):")
     for r in rules:
-        print(f"  {r.get('name', '?')}: {r.get('description', '')}")
+        tag = f"[{r.get('type', '?')}]"
+        recursive = " (recursive)" if r.get("is_recursive") else ""
+        print(f"  {tag} {r.get('name', '?')}{recursive}: {r.get('description', '')}")
     print(f"\nResults saved to session.")
 
 
