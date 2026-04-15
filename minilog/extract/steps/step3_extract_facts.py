@@ -169,24 +169,41 @@ def _validate_facts(facts: list[dict], book_dir: Path, source_text: str) -> list
 
 
 def _write_facts_ml(book_dir: Path, facts: list[dict]) -> None:
-    """Write facts.ml with citations as comments."""
-    lines = ["% Facts extracted from source text", "% Each fact followed by citation comment", ""]
+    """Write facts.ml with citations as comments, grouped by domain."""
+    state = load_session(book_dir)
+    schema = state.get("proposed_schema", {})
 
-    # Group by predicate
-    by_pred: dict[str, list[dict]] = {}
+    # Build predicate → domain mapping
+    pred_to_domain: dict[str, str] = {}
+    for domain, preds in schema.items():
+        for p in preds:
+            pred_to_domain[p["functor"]] = domain
+
+    # Group valid facts by domain then predicate
+    by_domain: dict[str, dict[str, list[dict]]] = {}
     for f in facts:
         if not f.get("valid", True):
             continue
         pred = f.get("predicate", "unknown")
-        by_pred.setdefault(pred, []).append(f)
+        domain = pred_to_domain.get(pred, "other")
+        by_domain.setdefault(domain, {}).setdefault(pred, []).append(f)
 
-    for pred, pred_facts in sorted(by_pred.items()):
-        lines.append(f"% {pred}")
-        for f in pred_facts:
-            args = ", ".join(str(a) for a in f.get("args", []))
-            citation = f.get("citation", "")
-            lines.append(f"{pred}({args}).  % \"{citation}\"")
+    lines = ["% Facts extracted from source text", "% Grouped by domain, each fact followed by citation", ""]
+
+    for domain in sorted(by_domain.keys()):
+        preds = by_domain[domain]
+        lines.append(f"% {'=' * 50}")
+        lines.append(f"% Domain: {domain}")
+        lines.append(f"% {'=' * 50}")
         lines.append("")
+        for pred in sorted(preds.keys()):
+            pred_facts = preds[pred]
+            lines.append(f"% {pred}/{pred_facts[0].get('arity', '?')} ({len(pred_facts)} facts)")
+            for f in pred_facts:
+                args = ", ".join(str(a) for a in f.get("args", []))
+                citation = f.get("citation", "")
+                lines.append(f"{pred}({args}).  % \"{citation}\"")
+            lines.append("")
 
     from minilog.extract.paths import artifacts_dir
     facts_path = artifacts_dir(book_dir) / "facts.ml"
