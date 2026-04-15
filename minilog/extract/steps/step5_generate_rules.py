@@ -129,17 +129,38 @@ def _validate_rules(rules: list[dict], schema: dict) -> list[dict]:
 
 
 def _write_rules_ml(book_dir: Path, rules: list[dict]) -> None:
-    """Write rules.ml with generated rules."""
-    lines = ["% Rules generated from proposed candidates", ""]
+    """Write rules.ml grouped by domain."""
+    from minilog.extract.session import load_session
 
+    # Build rule name → domain mapping from proposed rules
+    state = load_session(book_dir)
+    proposed = state.get("proposed_rules", [])
+    name_to_domain: dict[str, str] = {}
+    for r in proposed:
+        name_to_domain[r.get("name", "")] = r.get("domain", "other")
+
+    # Group by domain
+    by_domain: dict[str, list[dict]] = {}
     for r in rules:
-        if not r.get("valid", True):
-            lines.append(f"% INVALID: {r.get('name', '?')} — {', '.join(r.get('issues', []))}")
-            lines.append(f"% {r.get('rule_text', '')}")
-        else:
-            lines.append(f"% {r.get('name', '?')}: {r.get('variant', '')}")
-            lines.append(r.get("rule_text", ""))
+        domain = name_to_domain.get(r.get("name", ""), r.get("domain", "other"))
+        by_domain.setdefault(domain, []).append(r)
+
+    lines = ["% Rules generated from proposed candidates", "% Grouped by domain", ""]
+
+    for domain in sorted(by_domain.keys()):
+        domain_rules = by_domain[domain]
+        lines.append(f"% {'=' * 50}")
+        lines.append(f"% Domain: {domain}")
+        lines.append(f"% {'=' * 50}")
         lines.append("")
+        for r in domain_rules:
+            if not r.get("valid", True):
+                lines.append(f"% INVALID: {r.get('name', '?')} — {', '.join(r.get('issues', []))}")
+                lines.append(f"% {r.get('rule_text', '')}")
+            else:
+                lines.append(f"% {r.get('name', '?')}: {r.get('variant', '')}")
+                lines.append(r.get("rule_text", ""))
+            lines.append("")
 
     from minilog.extract.paths import artifacts_dir
     rules_path = artifacts_dir(book_dir) / "rules.ml"
