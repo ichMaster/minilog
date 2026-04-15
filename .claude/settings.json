@@ -67,7 +67,12 @@
       "Bash(sed -i '' '1,5s|from minilog.extract.errors|from minilog.extract.paths import source_md\\\\nfrom minilog.extract.errors|' minilog/extract/steps/step1_detect_domains.py)",
       "Bash(sed -i '' 's|book_dir / \"source.md\"|source_md\\(book_dir\\)|g' minilog/extract/steps/step2_propose_schema.py)",
       "Bash(sed -i '' '1,5s|from minilog.extract.errors|from minilog.extract.paths import source_md\\\\nfrom minilog.extract.errors|' minilog/extract/steps/step2_propose_schema.py)",
-      "Bash(sed -i '' 's|book_dir / \"source.md\"|source_md\\(book_dir\\)|' minilog/extract/steps/step3_extract_facts.py)"
+      "Bash(sed -i '' 's|book_dir / \"source.md\"|source_md\\(book_dir\\)|' minilog/extract/steps/step3_extract_facts.py)",
+      "Bash(sed -i '' 's|source.md and metadata.txt written|{args.name}.md and metadata.txt written|' minilog/extract/cli.py)",
+      "Bash(sed -i '' 's|source/, source.md, metadata.txt|source/, <name>.md, metadata.txt|' minilog/extract/cli.py)",
+      "Bash(sed -i '' \"s|Detecting domains in {book_dir}/source.md|Detecting domains in {book_dir}/{args.name}.md|\" minilog/extract/cli.py)",
+      "Bash(sed -i '' \"s|Extracting facts from {book_dir}/source.md|Extracting facts from {book_dir}/{args.name}.md|\" minilog/extract/cli.py)",
+      "Bash(sed -i '' \"s|source.md not found in {book_dir}|{args.name}.md not found in {book_dir}|\" minilog/extract/cli.py)"
     ]
   }
 }
