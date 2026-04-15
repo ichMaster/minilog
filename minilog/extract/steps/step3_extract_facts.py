@@ -9,7 +9,9 @@ from minilog.extract.paths import source_md
 from minilog.extract.session import load_session, save_session
 
 
-SYSTEM_PROMPT = """You are an expert knowledge engineer. Your task is to extract concrete ground facts from a text that match a given schema of minilog predicates. Each fact must have a citation — a short quoted passage from the source text that supports it.
+SYSTEM_PROMPT = """You are an expert knowledge engineer performing exhaustive fact extraction. Your task is to extract THE MAXIMUM NUMBER of concrete ground facts from a text that match a given schema. You must be extremely thorough — scan every sentence, every paragraph, every mention. Missing a fact is worse than including a borderline one.
+
+Each fact must have a citation — a short quoted passage from the source text.
 
 Output format: JSON array of objects:
 [
@@ -23,10 +25,14 @@ Output format: JSON array of objects:
 
 Rules:
 1. Only use predicates from the provided schema.
-2. Arguments must be atoms (lowercase identifiers) — no spaces, no special characters.
-3. Each citation must be a short passage (max 100 chars) actually found in the source text.
-4. Do not invent facts not supported by the text.
-5. Be thorough — extract ALL facts the text supports for each predicate."""
+2. Arguments must be atoms (lowercase identifiers, underscores allowed, no spaces).
+3. Each citation must be a short passage (max 100 chars) from the source text.
+4. Do not invent facts not in the text, but DO extract every fact the text supports.
+5. For EACH predicate, extract EVERY instance you can find — not just 1-2 examples, but ALL of them.
+6. If a paragraph mentions 5 different algorithms, that is 5 separate facts, not 1.
+7. If a name appears with multiple attributes, each attribute is a separate fact.
+8. Aim for at least 5 facts per predicate. If you found fewer, re-read the text more carefully.
+9. Prefer over-extraction to under-extraction — it's easier to remove false positives than to re-extract missed facts."""
 
 
 def _chunk_text(text: str, max_chars: int = 40000, overlap: int = 2000) -> list[str]:
@@ -43,14 +49,24 @@ def _chunk_text(text: str, max_chars: int = 40000, overlap: int = 2000) -> list[
 
 
 def _format_schema_for_prompt(book_dir: Path) -> str:
-    """Read schema from session and format for the prompt."""
+    """Read schema from session and format with grounding hints."""
     state = load_session(book_dir)
     schema = state.get("proposed_schema", {})
+    grounding = state.get("grounding", {})
     lines = []
     for domain, preds in schema.items():
         for p in preds:
             args = ", ".join(p.get("args", [f"arg{i+1}" for i in range(p["arity"])]))
-            lines.append(f"- {p['functor']}/{p['arity']} ({args}) — {p.get('description', '')}")
+            key = f"{p['functor']}/{p['arity']}"
+            g = grounding.get(key, {})
+            count = g.get("example_count", len(g.get("examples", [])))
+            # Include grounding examples as hints
+            hints = ""
+            examples = g.get("examples", [])
+            if examples:
+                example_strs = [f"  e.g. {e.get('args', [])}" for e in examples[:3]]
+                hints = " | Known examples: " + "; ".join(example_strs)
+            lines.append(f"- {key} ({args}) — {p.get('description', '')} [expected: ~{count} facts]{hints}")
     return "\n".join(lines)
 
 
@@ -72,9 +88,9 @@ def extract_facts(book_dir: Path) -> list[dict]:
     seen_keys: set[str] = set()
 
     for i, chunk in enumerate(chunks):
-        prompt = f"""Extract all ground facts from the following text chunk that match the schema below.
+        prompt = f"""Extract THE MAXIMUM NUMBER of ground facts from the following text chunk. For each predicate in the schema, find EVERY instance in the text — not just a few examples, but ALL of them. The schema includes expected counts from a prior grounding check; try to meet or exceed those counts.
 
-## Schema (predicates to use):
+## Schema (predicates to use, with expected fact counts and example hints):
 {schema_text}
 
 ## Text (chunk {i+1}/{len(chunks)}):
